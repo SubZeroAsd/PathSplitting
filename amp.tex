@@ -1,0 +1,24 @@
+\section{Atomic Multi-Path}
+
+The AMP protocol\footnote{https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-February/000993.html} works as follows:
+
+\begin{itemize}
+	\item The sender builds the base preimage $\textit{BP}$, from which n 
+	partial preimages will be derived. Next, the sender samples n additive shares $s_1,\ldots, s_n$, and takes the sum to compute 
+	$\textit{BP} = s_1 + \ldots + s_n$.
+	
+	\item The sender now moves on to constructing the
+n partial payments. The sender deterministically
+computes the partial preimage $r_i = H(\textit{BP} ||  i)$. The payment 
+condition is then $h_i = H(r_i)$. 
+
+	\item The sender initiates the $i$-th payment by
+constructing a route to the destination with 
+value $v_i$ and payment hash $h_i$.
+The tuple $(\textit{ID}, n, s_i)$ is included in the layered encryption 
+to be opened by the receiver. {\bf Pedro: It is really important 
+that here only the receiver gets the tuple $(\textit{ID}, n, s_i)$}
+\end{itemize}
+
+
+
