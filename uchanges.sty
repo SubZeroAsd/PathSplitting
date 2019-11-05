@@ -1,0 +1,263 @@
+\makeatletter
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{uchanges}
+\RequirePackage{kvoptions} % ftp://ftp.fu-berlin.de/tex/CTAN/macros/latex/contrib/oberdiek/kvoptions.dtx
+
+%\newif\if@show@changes\@show@changestrue
+
+
+\SetupKeyvalOptions{family=latexchanges,prefix=ch@opt@}
+
+% Undefined ifXXX counts as false
+\newcommand\ch@callif[1]{\expandafter\ifx\csname if#1\endcsname\iftrue\expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+% Undefined ifXXX counts as true
+\newcommand\ch@callifb[1]{\expandafter\ifx\csname if#1\endcsname\iffalse\expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
+
+
+\ch@callifb{draft}{\DeclareBoolOption[true]{show}}{\DeclareBoolOption[false]{show}}
+
+\DeclareBoolOption[true]{color}
+\DeclareComplementaryOption{bw}{color}
+\DeclareComplementaryOption{hide}{show}
+\DeclareStringOption{users}
+
+\ProcessKeyvalOptions{latexchanges}
+
+\ifx\ch@opt@users\empty
+  \PackageError{changes}{Option users not given}{Please specify users=XXX as a package option where XXX is a list of all user keys.}
+\fi
+
+\RequirePackage{color}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\RequirePackage{relsize}
+
+% Configures the changes of user #1 to appear in colour #2.
+% The colour #2 should be a colour known to color.sty.
+% Can also be used in whoami.txt.
+\newcommand\ChangesSetUserColor[2]{\global\expandafter\def\csname ch@col@#1\endcsname{#2}}
+
+
+\ifch@opt@show
+{
+  \newcommand\ChangesSetBW{\global\ch@opt@colorfalse}
+  \newcommand\ChangesSetColor{\global\ch@opt@colortrue}
+  \newcommand\ChangesSetHide{\global\ch@opt@showfalse}
+  \let\ch@whoamiok\undefined
+  \def\iam#1{\let\ch@whoamiok1\global\expandafter\let\csname ch@whoami@#1\endcsname1\gdef\ch@whoami{#1}}
+  \InputIfFileExists{whoami.txt}{}{
+    \PackageError{changes}{whoami.txt does not exist. Create a file whoami.txt with a line containing "\string\iam\space X" where X is your user-key}{
+      Your user key is probably something like the first character of
+      your name or some other character identifying you. It *must* be
+      a single character}
+  }
+  \ifx\ch@whoamiok\undefined
+    \PackageError{changes}{whoami.txt does not contain a line "\string\iam\space X" where X is your user-key}{
+      Your user key is probably something like the first character of
+      your name or some other character identifying you. It *must* be
+      a single character}
+  \fi
+}
+\fi
+
+% \newchangecommand@ <\command> \@nil [<nrargs>] {show} {hide} {userkey}
+% Define \command, \commandfor for user userkey
+% The userkey must already be contained in command
+% See \newchangecommand for the meaning of the other args
+\def\newchangecommand@#1[#2]#3#4#5{%
+  {\escapechar=-1\xdef\ch@macroname{\string#1}}%
+  \edef\ch@hidename{\ch@macroname @hide}% This does not seem to be used?
+  \ifch@opt@show
+  \expandafter\newcommand\csname\ch@macroname @show\endcsname[#2]{#3}%
+  \else
+  \expandafter\newcommand\csname\ch@macroname @show\endcsname[#2]{#4}%
+  \fi
+  \expandafter\newcommand\csname\ch@macroname @hide\endcsname[#2]{#4}%
+  \expandafter\ch@preview@skip\csname\ch@macroname\endcsname
+  \expandafter\ch@preview@skip\csname\ch@macroname for\endcsname
+  \edef\temp@a{%
+    \def\expandafter\noexpand\csname\ch@macroname\endcsname{\expandafter\noexpand\expandafter\csname\ch@macroname @show\endcsname{#5}}%
+    % \commandfor{#1}{#2}{...} - #1 users to show, #2 ignored (for latexchanges.pl)
+    \def\expandafter\noexpand\csname\ch@macroname for\endcsname####1####2{%
+      \noexpand\ch@for
+      \expandafter\noexpand\csname\ch@macroname @show\endcsname
+      \expandafter\noexpand\csname\ch@macroname @hide\endcsname
+      ####1\noexpand\@nil{#5}%
+      }
+  }
+  \temp@a
+}
+
+% \newchangecommand <\command> [<nrargs>] {show} {hide}
+% Define \commandX, \commandXfor for all users X
+% \commandX takes <nrargs> arguments
+% If \commandX should be shown for X, show is executed
+% Otherwise hide is executed
+% The <nrargs> is not optional!
+\def\newchangecommand#1[#2]#3#4{%
+  {\escapechar=-1 \expandafter}%
+  \expandafter\expandafter\expandafter\newchangecommand@II
+  \expandafter\ch@opt@users\expandafter\@nil\expandafter{\string#1}[#2]{#3}{#4}%
+}
+% \newchangecommand@II <userkey>+ \@nil {command} [<nrargs>] {show} {hide}
+% Like \newchangecommand
+% <userkey>+ must contain the keys of all existing users
+% command must be the name of the command as string (w/o leading \)
+\def\newchangecommand@II#1#2\@nil#3[#4]#5#6{%
+  \expandafter\newchangecommand@\csname#3#1\endcsname[#4]{#5}{#6}{#1}%
+  \ifx\@nil#2\@nil\else\newchangecommand@II#2\@nil{#3}[#4]{#5}{#6}\fi
+}
+
+\newcommand\ch@gencmd[1]{%
+  \edef\temp@a{%
+    \def\csname #1for\endcsname####1{%
+      \noexpand\ch@for\csname #1@show\endcsname
+                      \csname #1@hide\endcsname
+                      ####1\@nil}
+  }
+  \typeout{TA: \meaning\temp@a}
+  \temp@a
+}
+
+
+% \ch@preview@skip <\macro>
+% Adds \macro to the list of macros that should be ignored by preview
+% if preview is loaded.
+\newcommand\ch@preview@skip[1]{%
+  \g@addto@macro\ch@preview@skiplist{\PreviewMacro*#1}%
+}
+\def\ch@preview@skiplist{}
+\AtBeginDocument{\ifx\PreviewMacro\undefined\else
+  \ch@preview@skiplist
+  \ch@callif{Preview}{\let\ch@sidecross\empty}{}%
+  \fi}
+
+\ch@preview@skip\TODO
+
+% \ch@for <\hitcmd> <\misscmd> <userkey>* \@nil {macro} <macroargs>
+% Wenn einer der Userkeys matcht, fuehre \hitcmd aus, sonst \misscmd
+\def\ch@for #1#2#3\@nil{%
+  \ifx\ch@for#3\ch@for
+  \expandafter\ch@for@dosecond
+  \else
+  \expandafter\ch@for@
+  \fi
+  {#1}{#2}#3\@nil}
+
+% \ch@for@ <\hitcmd> <\misscmd> <userkey>+ \@nil {macro} <macroargs>
+% Wie \ch@for, nur muss mindestens ein UserK uebergeben werden
+\def\ch@for@ #1#2#3#4\@nil{%
+  \expandafter\ifx\csname ch@whoami@#3\endcsname\relax
+  \expandafter\ch@for
+  \else
+  \expandafter\ch@for@dofirst
+  \fi
+  {#1}{#2}#4\@nil%
+}
+
+\def\ch@message{\typeout{TODO: Check changes.}}
+
+\def\ch@for@dofirst#1#2#3\@nil{\ch@message#1}
+\def\ch@for@dosecond#1#2#3\@nil{#2}
+
+\def\ch@defaultcolor{red}
+\ifch@opt@color
+\def\ch@color#1{%
+  \@ifundefined{ch@col@for\ch@whoami}{%
+    \@ifundefined{ch@col@#1}{%
+      \color{\ch@defaultcolor}%
+    }{\color{\csname ch@col@#1\endcsname}}%
+  }{\color{\csname ch@col@for\ch@whoami\endcsname}}%
+}
+\else
+\def\ch@color#1{\color{black}\bfseries}
+\fi
+
+
+\def\ch@removeduplicatespace@{%
+  \ifx\ch@removeduplicatespace@token\@sptoken\unskip\fi
+}
+\long\def\@gobblethree#1#2#3{}
+
+% Removes duplicate space.
+%
+% Example <space> \ch@removeduplicatespace <space> generates a
+% single space.
+%
+% Intended use: <space> \hide{test} <space> should not generate a
+% double space if \hide{test} expands to empty text. Therefore, \hide
+% should call \ch@removeduplicatespace in this case.
+%
+% Detailed operation:
+% * If we are in vmode, the macros does nothing
+% * Otherwise, if the next token is a space, execute \unskip
+\def\ch@removeduplicatespace{%
+  \ifvmode\expandafter\@gobblethree\fi
+  \futurelet\ch@removeduplicatespace@token\ch@removeduplicatespace@
+}
+
+% Define the postscript macro xdviinitmatrix to behave like initmatrix
+% In the case of xdvi, it applies an additional transformation,
+% because xdvi swaps the axes
+\special{!
+  TeXDict begin
+  systemdict /DEVICE known { DEVICE (x11) eq } { false } ifelse
+  % true if using xdvi, false otherwise
+  { /xdviinitmatrix { initmatrix [0 1 1 0 0 0] concat } bind def }
+  { /xdviinitmatrix { initmatrix } bind def }
+  ifelse
+  end
+}
+
+\newcommand\ch@sidecrosspos{40}
+\newcommand\ch@sidecrosssize{15}
+\newcommand\ch@sidecross{%
+ {\special{ps:
+     gsave 
+     /Helvetica-Bold \ch@sidecrosssize\space selectfont
+     xdviinitmatrix
+     currentpoint % x y
+     exch % y x
+     pop % y
+     \ch@sidecrosspos\space % y sidecrossposs
+     exch % sidecrossposs y
+     \ch@sidecrosssize\space 4 div % sidecrossposs y (sidecrosssize/4)
+     sub % sidecrossposs y
+     moveto (X) show
+     grestore
+ }}}
+
+\newcommand\ch@text{\ifmmode\expandafter\text\fi}
+
+% Die User-Macros sind hier zu definieren
+
+\newchangecommand\NEW[2]{{\ch@color{#1}\ch@sidecross#2}}{#2}
+\newchangecommand\REPLACE[3]{\textsmaller{{\ch@color{#1}\ch@sidecross[[}\color{gray}#2{\ch@color{#1}]]}}{\ch@color{#1}#3}}{#3}
+\newchangecommand\REMOVE[2]{\textsmaller{{\ch@color{#1}\ch@sidecross[[}\color{gray}#2{\ch@color{#1}]]}}}{\ch@removeduplicatespace}
+\newchangecommand\MESSAGE[2]{{\ch@text{\ch@color{#1}\ch@sidecross\bfseries [MSG: #2]}}}{\ch@removeduplicatespace}
+\newchangecommand\TODO[2]{{%
+  \ch@color{#1}\ch@sidecross
+  \def\temp@a{#2}%
+  \ch@text{\bfseries[TODO\ifx\@nil#2\@nil\else: #2\fi]}%
+  \typeout{XTODO\ifx\@nil#2\@nil...\else: \ch@strip@meaning@\temp@a\fi}% Outputs containing ()'s confuse AucTeX
+  }}{\ch@removeduplicatespace}
+
+\expandafter\def\expandafter\ch@strip@meaning\meaning\empty #1\@nil{#1}
+\def\ch@strip@meaning@#1{\expandafter\ch@strip@meaning\meaning#1\@nil}
+\long\def\ch@TODO#1{\ifch@opt@show{\color{black}\ch@sidecross
+    \def\temp@a{#1}%
+    {\bfseries[{\tiny (Anonymous TODO deprecated.)} TODO\ifx\@nil#1\@nil\else: #1\fi]}%
+    \typeout{TODO\ifx\@nil#1\@nil...\else: \ch@strip@meaning@\temp@a\fi}% Outputs containing ()'s confuse AucTeX
+    \typeout{TODO}%
+  }%
+  \fi}
+\def\ch@TODO@#1{\ifmmode\textrm{\ch@TODO{#1}}\else\ch@TODO{#1}\fi}
+\def\ch@TODO@@[#1]{\ch@TODO@{#1}}
+\DeclareRobustCommand\TODO{\@ifnextchar[{\ch@TODO@@}{\@ifnextchar \bgroup{\ch@TODO@}{\ch@TODO@{}}}}
+
+%%% Local Variables:
+%%% mode: latex
+%%% coding: latin-1
+%%% End:
+%%% Local IspellDict: british
+

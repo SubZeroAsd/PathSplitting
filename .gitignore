@@ -1,0 +1,11 @@
+whoami.txt
+*.aux
+*.bak
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.synctex*
+*.bbl

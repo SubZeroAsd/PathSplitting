@@ -1,0 +1,54 @@
+\section*{Protocol}
+
+\begin{figure}[htb]
+	\centering
+	\fbox{
+		\pseudocode[mode=text,width=\linewidth]{%
+			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let $g_1 \in \GG_1$  
+			and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, respectively. Let $e \colon 
+			(\GG_1, \GG_2) \to \GG_T$ be a function that maps a pair of elements from $(\GG_1, \GG_2)$ 
+			to an element of a cyclic group $\GG_T$ of order $q$, which has a generator $g_T$. \\
+			\underline{$\Setup(1^\lambda)$}: Randomly sample $(x,y) \sample \ZZ_q^2$ and return 
+			$s := (g_1^{xy}, g_T^y)$ and $t := x$. \\
+			\underline{$\langle U_{\Lock}(s), U'_\Lock() \rangle$}: On input a state $s := (s_1, s_2)$, 
+			the user $U$ samples a randomness $r \sample \ZZ_q$, and sets $\ell := s_2, s' = (s_1^r, s_2^r)$, 
+			and $w := (r, s_1)$. The user $U'$ is given $(\ell, w, s')$, parses $w$ as $(r, s_1)$, and 
+			accepts if $s' \? (s_1^r, \ell^r)$. \\
+			\underline{$\Release(s, w, \ell, t)$}: On input a reference state $s := (s_1, s_2)$, a witness 
+			$w$, a lock $\ell$, and a trapdoor $t$, the release algorithm checks whether $s_2 \? \ell$ and 
+			$e(s_1^{-t},g_2) \? s_2$. If the checks pass, it returns $k = s_1^{-t}$, otherwise returns $\bot$. \\
+			\underline{$\Extract(k, w, w')$}: On input a key $k$, and a pair of witnesses $(w, w')$, the 
+			extraction algorithm parses $w'$ as $(s_1', r')$, and returns a key $k' = k^{-r'}$. \\
+			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the verification algorithm 
+			returns 1 if $e(k, g_2) \? \ell$ and 0 otherwise.
+		}
+	}
+	\caption{First version.}
+\end{figure}
+
+\begin{figure}[htb]
+	\centering
+	\fbox{
+		\pseudocode[mode=text,width=\linewidth]{%
+			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let $g_1 \in \GG_1$  
+			and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, respectively. Let $e \colon 
+			(\GG_1, \GG_2) \to \GG_T$ be a function that maps a pair of elements from $(\GG_1, \GG_2)$ 
+			to an element of a cyclic group $\GG_T$ of order $q$, which has a generator $g_T$. \\
+			\underline{$\Setup(1^\lambda)$}: Randomly sample $(x,y) \sample \ZZ_q^2$ and return 
+			$s := (g_1^{xy}, g_T^y)$ and $t := x$. \\
+			\underline{$\langle U_{\Lock}(s), U'_\Lock() \rangle$}: On input a state $s := (s_1, s_2)$, 
+			the user $U$ samples a randomness $r \sample \ZZ_q$, and sets $\ell = s_2^r, s' := (s_1^r, \ell)$, 
+			and $w := (s_1, s_2, \pi)$, where $\pi \gets \prover_{\NIZK}(\{\exists r \mid s_1' = s_1^r 
+			\wedge \ell = s_2^r \}, r)$. The user $U'$ is given $(w, s')$, parses $w$ as $(s_1, s_2, \pi)$, 
+			and accepts if $\verifier_{\NIZK}(\pi_, (s_1', \ell)) = 1$. \\
+			\underline{$\Release(s, w, \ell, t)$}: On input a reference state $s := (s_1, s_2)$, a witness 
+			$w$, a lock $\ell$, and a trapdoor $t$, the release algorithm checks whether $s_2 \? \ell$ and 
+			$e(s_1^{-t},g_2) \? s_2$. If the checks pass, it returns $k = s_1^{-t}$, otherwise returns $\bot$. \\
+			\underline{$\Extract(k, w, w')$}: On input a key $k$, and a pair of witnesses $(w, w')$, the 
+			extraction algorithm parses $w'$ as $(s_1', r')$, and returns a key $k' = k^{-r'}$. \\
+			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the verification algorithm 
+			returns 1 if $e(k, g_2) \? \ell$ and 0 otherwise.
+		}
+	}
+	\caption{Second version.}
+\end{figure}

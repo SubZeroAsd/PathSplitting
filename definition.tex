@@ -1,0 +1,14 @@
+\section*{Definitions}
+
+\paragraph{Consistency} Consistency means that no party can release its left lock without its 
+right lock being release first.
+
+\paragraph{Atomicity} Atomicity means that the receiver can only start to release its locks, once it 
+has received all the locks intended for him in a given protocol run, and furthermore, every user in 
+any path is able to release its left lock only if its right lock is already released. 
+
+\paragraph{Anonymity} Anonymity means that each intermediate node does not learn any information about 
+the set of users in a protocol run beyond its direct neighbors, and furthermore, it cannot distinguish 
+if it is part of a single-path or multi-path lock.
+
+\paragraph{Accountability} ?
