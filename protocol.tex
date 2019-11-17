@@ -1,54 +1,81 @@
-\section*{Protocol}
+\section{Protocol}
+
+%\begin{figure}[htb]
+%	\centering
+%	\fbox{
+%		\pseudocode[mode=text,width=\linewidth]{%
+%			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let $g_1 \in \GG_1$  
+%			and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, respectively. Let $e \colon 
+%			(\GG_1, \GG_2) \to \GG_T$ be a function that maps a pair of elements from $(\GG_1, \GG_2)$ 
+%			to an element of a cyclic group $\GG_T$ of order $q$, which has a generator $g_T$. \\
+%			\underline{$\Setup(1^\lambda)$}: Randomly sample $(x,y) \sample \ZZ_q^2$ and return 
+%			$s := (g_1^{xy}, g_T^y)$ and $t := x$. \\
+%			\underline{$\langle U_{\Lock}(s), U'_\Lock() \rangle$}: On input a state $s := (s_1, s_2)$, 
+%			the user $U$ samples a randomness $r \sample \ZZ_q$, and sets $\ell := s_2, s' = (s_1^r, s_2^r)$, 
+%			and $w := (r, s_1)$. The user $U'$ is given $(\ell, w, s')$, parses $w$ as $(r, s_1)$, and 
+%			accepts if $s' \? (s_1^r, \ell^r)$. \\
+%			\underline{$\Release(s, w, \ell, t)$}: On input a reference state $s := (s_1, s_2)$, a witness 
+%			$w$, a lock $\ell$, and a trapdoor $t$, the release algorithm checks whether $s_2 \? \ell$ and 
+%			$e(s_1^{-t},g_2) \? s_2$. If the checks pass, it returns $k = s_1^{-t}$, otherwise returns $\bot$. \\
+%			\underline{$\Extract(k, w, w')$}: On input a key $k$, and a pair of witnesses $(w, w')$, the 
+%			extraction algorithm parses $w'$ as $(s_1', r')$, and returns a key $k' = k^{-r'}$. \\
+%			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the verification algorithm 
+%			returns 1 if $e(k, g_2) \? \ell$ and 0 otherwise.
+%		}
+%	}
+%	\caption{First version.}
+%\end{figure}
+
+\MESSAGEE{An intermediary can send the same state $s_i$ to more than one user when locking?} \\
+\MESSAGEE{Can an intermediary have unequal number of states, keys and witnesses for $\Extract$?}
 
 \begin{figure}[htb]
 	\centering
 	\fbox{
 		\pseudocode[mode=text,width=\linewidth]{%
-			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let $g_1 \in \GG_1$  
-			and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, respectively. Let $e \colon 
-			(\GG_1, \GG_2) \to \GG_T$ be a function that maps a pair of elements from $(\GG_1, \GG_2)$ 
-			to an element of a cyclic group $\GG_T$ of order $q$, which has a generator $g_T$. \\
-			\underline{$\Setup(1^\lambda)$}: Randomly sample $(x,y) \sample \ZZ_q^2$ and return 
-			$s := (g_1^{xy}, g_T^y)$ and $t := x$. \\
-			\underline{$\langle U_{\Lock}(s), U'_\Lock() \rangle$}: On input a state $s := (s_1, s_2)$, 
-			the user $U$ samples a randomness $r \sample \ZZ_q$, and sets $\ell := s_2, s' = (s_1^r, s_2^r)$, 
-			and $w := (r, s_1)$. The user $U'$ is given $(\ell, w, s')$, parses $w$ as $(r, s_1)$, and 
-			accepts if $s' \? (s_1^r, \ell^r)$. \\
-			\underline{$\Release(s, w, \ell, t)$}: On input a reference state $s := (s_1, s_2)$, a witness 
-			$w$, a lock $\ell$, and a trapdoor $t$, the release algorithm checks whether $s_2 \? \ell$ and 
-			$e(s_1^{-t},g_2) \? s_2$. If the checks pass, it returns $k = s_1^{-t}$, otherwise returns $\bot$. \\
-			\underline{$\Extract(k, w, w')$}: On input a key $k$, and a pair of witnesses $(w, w')$, the 
-			extraction algorithm parses $w'$ as $(s_1', r')$, and returns a key $k' = k^{-r'}$. \\
-			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the verification algorithm 
-			returns 1 if $e(k, g_2) \? \ell$ and 0 otherwise.
+			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let 
+			$g_1 \in \GG_1$ and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, 
+			respectively. Let $e \colon (\GG_1, \GG_2) \to \GG_T$ be a function that maps 
+			a pair of elements from $(\GG_1, \GG_2)$ to an element of a cyclic group $\GG_T$ 
+			of order $q$, which has a generator $g_T$. Furthermore, let $\enc$ be a symmetric 
+			encryption scheme, with the corresponding decryption algorithm $\dec$, randomization 
+			algorithm $\rand$ key space $\mathcal{K}$, and message space $\ZZ_q$. \\
+			\underline{$\Setup(1^\lambda, v,U_R)$}: On input a payment value $v$ and a receiver 
+			$U_R$, sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$ and 
+			$k_t, k_s \sample \mathcal{K}$, secret share $k_t$ as $([k_t]_1,\ldots[k_t]_v)$, 
+			generate ciphertexts $(c_t^{(1)},\ldots,c_t^{(v)}) \gets (\enc(k_t, x_1),\ldots,
+			\enc(k_t,x_v))$ and $(c_s^{(1)},\ldots,c_s^{(v)}) \gets (\enc(k_s, [k_t]_1),\ldots,
+			\enc(k_s, [k_t]_v))$, compute the states $(s_1,\ldots,s_v) \gets ((g^{x_1y}, g_T^y, 
+			c_s^{(1)}),\ldots,(g^{x_vy}, g_T^y, c_s^{(v)}))$, send 
+			$(v, k_s, (c_t^{(1)},\ldots,c_t^{(v)}))$ to $U_R$, and return 
+			$\vec{s} := (s_1,\ldots,s_v)$. \\
+			\underline{$\Lock(\vec{s}, \{(U_1,p_1),\ldots,(U_m,p_m)\})$}: On input a state 
+			$\vec{s} := (s_1,\ldots,s_l)$, a set of tuples $(U_i, p_i)$, where $U_i$ is the user 
+			identifier and $p_i$ is the partition size, $\forall i$ in $[1,m]$, sample a 
+			randomness $r_i \sample \ZZ_q$, pick $p_i$ many unused states $(s_1,\ldots,s_{p_i})$ 
+			from $\vec{s}$, $\forall j$ in $[1,p_i]$, parse state $s_j$ as 
+			$(s_j^{(1)},s_j^{(2)},s_j^{(3)})$, set $\ell_j \gets (s_j^{(2)})^r, s_j' \gets 
+			((s_j^{(1)})^r, \ell_j, \rand(s_j^{(3)}))$, send $\vec{s'} := (s_1',\ldots,s_{p_i}')$ 
+			to $U_i$, and store $\vec{w} := (r_1,\ldots,r_m)$. \\
+			\underline{$\Release(\vec{s}, \vec{c}, k_s, v)$}: On input a state 
+			$\vec{s} := (s_1,\ldots,s_l)$, ciphertexts $\vec{c} := (c_1,\ldots,c_l)$, 
+			decryption key $k_s$ and a payment value $v$, if 
+			$l \neq v$, then return $\bot$. Otherwise, $\forall i$ in $[1,v]$, parse $s_i$ as 
+			$(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$, and decrypt to obtain $[k_t]_i \gets 
+			\dec(k_s, s_i^{(3)})$. If any $[k_t]_i = \bot$, then return $\bot$, else reconstruct 
+			$k_t$ from $([k_t]_1,\ldots,[k_t]_v)$. Using $k_t$, $\forall i$ in $[1,v]$, decrypt 
+			$x_i \gets \dec(k_t, c_i)$, if $x_i = \bot$, then return $\bot$, otherwise, 
+			check whether $e((s_i^{(1)})^{-x_i},g_2) = s_i^{(2)}$. If the check passes, set 
+			$k_i \gets (s_i^{(1)})^{-x_i}$, otherwise return $\bot$. Finally, return $\vec{k} := 
+			(k_1,\ldots,k_v)$. \\
+			\underline{$\Extract(\vec{s}, \vec{k}, \vec{w})$}: On input a state $\vec{s} := 
+			(s_1,\ldots,s_l)$, keys $\vec{k} := (k_1,\ldots,k_l)$, and witnesses 
+			$\vec{w} := (r_1,\ldots,r_l)$, $\forall i$ in $[1,l]$, parse state $s_i$ as 
+			$(s_i^{(1)}, s_i^{(2)}), s_i^{(3)}$), set $k_i' \gets k_i^{-r_i}$, and return 
+			$\vec{k'} := (k_1',\ldots,k_l')$. \\
+			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the 
+			verification algorithm returns 1 if $e(k, g_2) = \ell$, and 0 otherwise.
 		}
 	}
-	\caption{First version.}
-\end{figure}
-
-\begin{figure}[htb]
-	\centering
-	\fbox{
-		\pseudocode[mode=text,width=\linewidth]{%
-			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let $g_1 \in \GG_1$  
-			and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, respectively. Let $e \colon 
-			(\GG_1, \GG_2) \to \GG_T$ be a function that maps a pair of elements from $(\GG_1, \GG_2)$ 
-			to an element of a cyclic group $\GG_T$ of order $q$, which has a generator $g_T$. \\
-			\underline{$\Setup(1^\lambda)$}: Randomly sample $(x,y) \sample \ZZ_q^2$ and return 
-			$s := (g_1^{xy}, g_T^y)$ and $t := x$. \\
-			\underline{$\langle U_{\Lock}(s), U'_\Lock() \rangle$}: On input a state $s := (s_1, s_2)$, 
-			the user $U$ samples a randomness $r \sample \ZZ_q$, and sets $\ell = s_2^r, s' := (s_1^r, \ell)$, 
-			and $w := (s_1, s_2, \pi)$, where $\pi \gets \prover_{\NIZK}(\{\exists r \mid s_1' = s_1^r 
-			\wedge \ell = s_2^r \}, r)$. The user $U'$ is given $(w, s')$, parses $w$ as $(s_1, s_2, \pi)$, 
-			and accepts if $\verifier_{\NIZK}(\pi_, (s_1', \ell)) = 1$. \\
-			\underline{$\Release(s, w, \ell, t)$}: On input a reference state $s := (s_1, s_2)$, a witness 
-			$w$, a lock $\ell$, and a trapdoor $t$, the release algorithm checks whether $s_2 \? \ell$ and 
-			$e(s_1^{-t},g_2) \? s_2$. If the checks pass, it returns $k = s_1^{-t}$, otherwise returns $\bot$. \\
-			\underline{$\Extract(k, w, w')$}: On input a key $k$, and a pair of witnesses $(w, w')$, the 
-			extraction algorithm parses $w'$ as $(s_1', r')$, and returns a key $k' = k^{-r'}$. \\
-			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the verification algorithm 
-			returns 1 if $e(k, g_2) \? \ell$ and 0 otherwise.
-		}
-	}
-	\caption{Second version.}
+	\caption{Initial version of the construction}
 \end{figure}

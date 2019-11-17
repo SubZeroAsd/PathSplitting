@@ -1,4 +1,4 @@
-\section*{Definitions}
+\section{Definitions}
 
 \paragraph{Consistency} Consistency means that no party can release its left lock without its 
 right lock being release first.
@@ -11,4 +11,5 @@ any path is able to release its left lock only if its right lock is already rele
 the set of users in a protocol run beyond its direct neighbors, and furthermore, it cannot distinguish 
 if it is part of a single-path or multi-path lock.
 
-\paragraph{Accountability} ?
+\paragraph{Completeness?} The release algorithm returns either $\bot$ or $\vec{k} := (k_1,\ldots,
+k_v)$, for a payment value $v$ established in the setup procedure.
