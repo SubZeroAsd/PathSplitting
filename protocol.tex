@@ -26,7 +26,6 @@
 %	\caption{First version.}
 %\end{figure}
 
-\MESSAGEE{An intermediary can send the same state $s_i$ to more than one user when locking?} \\
 \MESSAGEE{Can an intermediary have unequal number of states, keys and witnesses for $\Extract$?}
 
 \begin{figure}[htb]
@@ -73,8 +72,8 @@
 			$\vec{w} := (r_1,\ldots,r_l)$, $\forall i$ in $[1,l]$, parse state $s_i$ as 
 			$(s_i^{(1)}, s_i^{(2)}), s_i^{(3)}$), set $k_i' \gets k_i^{-r_i}$, and return 
 			$\vec{k'} := (k_1',\ldots,k_l')$. \\
-			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the 
-			verification algorithm returns 1 if $e(k, g_2) = \ell$, and 0 otherwise.
+			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$ and a key $k$, return 1 
+			if $e(k, g_2) = \ell$, and 0 otherwise.
 		}
 	}
 	\caption{Initial version of the construction}
