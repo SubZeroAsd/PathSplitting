@@ -4,10 +4,10 @@
 
 \TODOE{Overview}
 
-\begin{figure}[htb]
-	\centering
-	\fbox{
-		\pseudocode[mode=text,width=\linewidth]{%
+\begin{figure*}[htb]
+	\begin{center}
+	\framebox[0.78\textwidth]{
+		\begin{minipage}[t]{0.75\textwidth}
 			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let $g_1 \in \GG_1$  
 			and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, respectively. Let $e \colon 
 			(\GG_1, \GG_2) \to \GG_T$ be a function that maps a pair of elements from $(\GG_1, \GG_2)$ 
@@ -25,17 +25,20 @@
 			extraction algorithm parses $w'$ as $(s_1', r')$, and returns a key $k' = k^{-r'}$. \\
 			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$, and a key $k$, the verification algorithm 
 			returns 1 if $e(k, g_2) \? \ell$ and 0 otherwise.
-		}
+		\end{minipage}
 	}
-	\caption{First version (single trapdoor).}
-\end{figure}
+	\end{center}
+	
+	\caption{Algorithms and protocols for the single trapdoor construction.}
+	\label{fig:single-trapdoor}
+\end{figure*}
 
 \MESSAGEE{Can an intermediary have unequal number of states, keys and witnesses for $\Extract$?}
 
-\begin{figure}[htb]
-	\centering
-	\fbox{
-		\pseudocode[mode=text,width=\linewidth]{%
+\begin{figure*}[htb]
+	\begin{center}
+	\framebox[0.78\textwidth]{
+		\begin{minipage}[t]{0.75\textwidth}
 			Let $\GG_1$ and $\GG_2$ be two cyclic groups of large primer order $q$. Let 
 			$g_1 \in \GG_1$ and $g_2 \in \GG_2$ be generators of $\GG_1$ and $\GG_2$, 
 			respectively. Let $e \colon (\GG_1, \GG_2) \to \GG_T$ be a function that maps 
@@ -60,7 +63,7 @@
 			$(s_j^{(1)},s_j^{(2)},s_j^{(3)})$, set $\ell_j \gets (s_j^{(2)})^r, s_j' \gets 
 			((s_j^{(1)})^r, \ell_j, \rand(s_j^{(3)}))$, send $\vec{s'} := (s_1',\ldots,s_{p_i}')$ 
 			to $U_i$, and store $\vec{w} := (r_1,\ldots,r_m)$. \\
-			\underline{$\Release(\vec{s}, \vec{c}, k_s, v)$}: On input a state 
+			\underline{$\Extract(\vec{s}, \vec{c}, k_s, v)$}: On input a state 
 			$\vec{s} := (s_1,\ldots,s_l)$, ciphertexts $\vec{c} := (c_1,\ldots,c_l)$, 
 			decryption key $k_s$ and a payment value $v$, if 
 			$l \neq v$, then return $\bot$. Otherwise, $\forall i$ in $[1,v]$, parse $s_i$ as 
@@ -71,14 +74,17 @@
 			check whether $e((s_i^{(1)})^{-x_i},g_2) = s_i^{(2)}$. If the check passes, set 
 			$k_i \gets (s_i^{(1)})^{-x_i}$, otherwise return $\bot$. Finally, return $\vec{k} := 
 			(k_1,\ldots,k_v)$. \\
-			\underline{$\Extract(\vec{s}, \vec{k}, \vec{w})$}: On input a state $\vec{s} := 
+			\underline{$\Release(\vec{s}, \vec{k}, \vec{w})$}: On input a state $\vec{s} := 
 			(s_1,\ldots,s_l)$, keys $\vec{k} := (k_1,\ldots,k_l)$, and witnesses 
 			$\vec{w} := (r_1,\ldots,r_l)$, $\forall i$ in $[1,l]$, parse state $s_i$ as 
 			$(s_i^{(1)}, s_i^{(2)}), s_i^{(3)}$), set $k_i' \gets k_i^{-r_i}$, and return 
 			$\vec{k'} := (k_1',\ldots,k_l')$. \\
 			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$ and a key $k$, return 1 
 			if $e(k, g_2) = \ell$, and 0 otherwise.
-		}
+		\end{minipage}
 	}
-	\caption{Initial version of the construction (multiple trapdoor)}
-\end{figure}
+	\end{center}
+	
+	\caption{Algorithms and protocols for the multiple trapdoor construction.}
+	\label{fig:multi-trapdoor}
+\end{figure*}

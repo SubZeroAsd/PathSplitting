@@ -9,3 +9,4 @@ whoami.txt
 *.pdf
 *.synctex*
 *.bbl
+*.texpad*

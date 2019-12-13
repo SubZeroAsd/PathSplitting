@@ -1,25 +1,79 @@
-
-
-
-
-
-
 \section{Problem Definition}
 
 \TODOP{Key ideas}
 
 \TODOE{Write the API for the Lock}
 
-\paragraph{Consistency} Consistency means that no party can release its left lock without its 
-right lock being release first.
+A \sysname is defined with respect to a universe of users $\mathbb{U}$, where we denote the sender and 
+receiver by $U_0$ and $U_n$, respectively. and it is composed of six-tuple of $\ppt$ algorithms and 
+protocols defined as follows:
 
-\paragraph{Atomicity} Atomicity means that the receiver can only start to release its locks, once it 
-has received all the locks intended for him in a given protocol run, and furthermore, every user in 
-any path is able to release its left lock only if its right lock is already released. 
+\begin{definition}
+A \sysname $\mathbb{L} = (\kgen, \Setup, \Lock, \Extract, \Release,\\ \Verify)$ consists of the 
+following algorithms and protocols:
 
-\paragraph{Anonymity} Anonymity means that each intermediate node does not learn any information about 
-the set of users in a protocol run beyond its direct neighbors, and furthermore, it cannot distinguish 
-if it is part of a single-path or multi-path lock.
+\begin{itemize}[leftmargin=15pt] %26pt default
+	\item $\{\vec{s}_0, \vec{\td}\} \gets \langle \Setup_{U_0}(1^\lambda, v, U_n),\Setup_{U_n}(1^\lambda) 
+	\rangle$: On input the security parameter $1^\lambda$, an integer value $v$ and a user identifier 
+	$U_n$, the setup protocol returns a vector of states $\vec{s}_0$ to the user $U_0$, and a vector 
+	of trapdoors $\vec{\td}$ to the user $U_n$.
+	
+	\item $\{\vec{w}_i,\vec{s}_{j_1}^\dag,\ldots,\vec{s}_{j_{m_i}}^\dag\} \gets \langle 
+	\Lock_{U_i}(\vec{s}_i, (U_{j_1},\ldots,U_{j_{m_i}})), \Lock_{U_{j_1}}(),\\ \ldots, \Lock_{U_{j_{m_i}}}() 
+	\rangle$: On input a vector of states $\vec{s}_i$ and a tuple of user identifiers $(U_{j_1},\ldots,
+	U_{j_{m_i}})$ for some $m_i$, the locking protocol is executed between the user $U_i$ and the users 
+	$(U_{j_1},\ldots,U_{j_{m_i}})$, and returns a vector of witnesses $\vec{w}_i$ to $U_i$, and $\forall e 
+	\in [1,m_i]$ a vector of states $\vec{s}_{j_e}^\dag$ to $U_{j_e}$.
+	
+	\item $\vec{k} \gets \Extract(\vec{s}_n,\vec{\td})$: On input a vector of states $\vec{s}_n$ and a 
+	vector of trapdoors $\vec{td}$, the extract algorithm returns a vector of opening keys $\vec{k}$.
+	
+	\item $\vec{k'} \gets \Release(\vec{k},\vec{w})$: On input a vector of opening keys $\vec{k}$ and a 
+	vector of witnesses $\vec{w}$, the release algorithm returns a new vector of opening keys $\vec{k'}$.
+	
+	\item $\{0,1\} \gets \Verify(\vec{s}, \vec{k})$: On input a vector of states $\vec{s}$ and a vector 
+	of keys $\vec{k}$, the verification algorithm returns a bit $b \in \{0,1\}$.
+\end{itemize}
+\end{definition}
 
-\paragraph{Completeness?} The release algorithm returns either $\bot$ or $\vec{k} := (k_1,\ldots,
-k_v)$, for a payment value $v$ established in the setup procedure.
+\paragraph{Correctness} A \sysname is \emph{correct} if the verification algorithm $\Verify$ accepts 
+an honestly generated vector of state-key pairs with overwhelming probability. More formally, we define 
+the correctness as follows:
+
+\begin{definition}[Correctness of {\sysname}s]
+Let $\mathbb{L}$ be a \sysname, $\lambda \in \NN^+$ and $n \in \poly[\lambda]$. Let $\vec{s}_0$ be a 
+vector of initial states, and $\vec{\td}$ a vector of trapdoors, such that for any $v \in \NN^+$, it 
+holds that $|\vec{s}_0| = |\vec{\td}| = v$ and
+\[
+	\{\vec{s}_0, \vec{\td}\} \gets \langle \Setup_{U_0}(1^\lambda, v, U_n),\Setup_{U_n}(1^\lambda) \rangle.
+\]
+
+Let $(\vec{w}_0,\ldots,\vec{w}_{n-1})$ be a tuple of vector of witnesses, and $(\vec{s}_1,\ldots,\vec{s}_n)$
+be a tuple of vector of states, such that for all $0 \leq i < n$, any $1 \leq m_i < n$, and any $1 \leq 
+j_1,\ldots,j_{m_i} \leq n$, it holds that 
+\[
+	\{\vec{w}_i,\vec{s}_{j_1}^\dag,\ldots,\vec{s}_{j_{m_i}}^\dag\} \gets
+	\left\langle 
+		\begin{array}{c}
+			\Lock_{U_i}(\vec{s}_i, (U_{j_1},\ldots,U_{j_{m_i}})), 	\\
+			\ldots 													\\
+			\Lock_{U_{j_{m_i}}}() 									\\
+		\end{array}
+	\right\rangle,
+\]
+and for all $1 \leq e \leq m_i$, $\vec{s}_{j_e} = \vec{s}_{j_e} \cup \vec{s}_{j_e}^\dag$.
+
+Furthermore, let $(\vec{k}_0,\ldots,\vec{k}_n)$ be a tuple of vector of keys, such that 
+\[
+	\vec{k}_n \gets \Extract(\vec{s}_n,\vec{\td}),
+\]
+and for all $0 \leq i < n$, it holds that
+\[
+	\vec{k}_i \gets \Release(\vec{k}_{i+1},\vec{w}_i).
+\]
+We say that $\mathbb{L}$ is \emph{correct} if there exists a negligible function $\negl[]$, such that 
+for all $0 \leq i \leq n$, it holds that
+\[
+	\prob{\Verify(\vec{s}_i, \vec{k}_i) = 1} \geq 1 - \negl[\lambda]
+\]
+\end{definition}

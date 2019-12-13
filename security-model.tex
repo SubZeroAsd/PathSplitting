@@ -1,0 +1,214 @@
+\section{Security Model}
+\label{sec:security-model}
+
+\TODOE{Threat model, communication model, ...}
+
+\TODOE{Write Ideal Functionality for both locks (multiple-trapdoor and single-trapdoor). Ideally, we have one ideal functionality 
+where we highlight the few differences.}
+
+In this section, we formalize the security and privacy notions of \sysname. We make use of 
+the universal composability (UC) framework of Canetti \cite{canetti}.
+
+\subsection{Attacker Model}
+\label{sec:attacker-model}
+
+We model parties as interactive Turing machines (ITMs), which communicate with a trusted 
+functionality $\FF$ via secure and authenticated communication channels. We model the 
+adversary $\adv$ as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
+which takes as input a party identifier $P$ and provides the attacker with the internal 
+state of $P$. From that point onward, all subsequent incoming and outgoing communication 
+of $P$ is routed through $\adv$. We consider the static corruption model, that is, the 
+adversary is required to commit to the identifiers of the parties it wishes to corrupt 
+ahead of time.
+
+\subsection{Ideal Functionality}
+\label{sec:ideal-func}
+
+\paragraph{Communication Model}
+Communication happens through the secure transmission functionality $\FF_{\smt}$, as 
+defined in \cite{canetti}, which informs the adversary whenever a communication between 
+any two parties happens, and allows the adversary to delay the delivery of the messages 
+arbitrarily. However, the adversary can neither read nor change the content of the messages.
+
+We consider a synchronous communication network, where communication proceeds in discrete 
+rounds, as defined in \cite{kmtz} and denoted here as $\FF_{\syn}$. The parties are 
+always aware of the current round, and if a party $P$ sends a message in round $r$, 
+the recipient party $R$ receives the message in the beginning of round $r + 1$. The 
+adversary can change the order of messages, but we assume that the order of messages 
+between honest parties cannot be changed (which can easily be realized using message 
+counters). For simplicity, we assume that computation is instantaneous.
+
+Furthermore, we assume existence of an anonymous communication channel as defined in 
+\cite{cl}, which we denote here as $\FF_{\anon}$. In the ideal functionality we use the 
+interfaces send$_\smt$ and receive$_\smt$ to exchange messages through the $\FF_{\smt}$ 
+functionality, and interfaces send$_\anon$ and receive$_\anon$ to exchange messages via 
+$\FF_{\anon}$.
+
+\paragraph{Our Model}
+In the following we define an ideal functionality $\FF_{\sysname}$ for {\sysname}s. For a 
+more modular treatment, we only model the cryptographic lock functionality.
+
+\MESSAGEP{Do we consider unidirectional or bidirectional links?}
+
+$\FF_{\sysname}$ works in interaction with a universe of users $\mathbb{U}$. Additionally, 
+$\FF_{\sysname}$ initializes an empty list $\LL := \emptyset$, which is used to track the 
+locks. The entries of $\LL$ are of the form $(\lid_i, \td_i, U_i, U_{i+1}, f, \\ \lid_{i+1})$, 
+where $\lid_i$ is unique lock identifier, $\td_i$ is the trapdoor of the lock, $U_i$ and $U_{i+1}$ 
+are the users connected by the lock (the left and right user, respectively), $f \in \{\Init,\Lock,
+\Rel\}$ is a status flag of the lock, and $\lid_{i+1}$ is the identifier of the next lock on the 
+path. We note that the trapdoors are only associated to the initial locks created for the sender, 
+and in all subsequent locks on the path the trapdoor is set to $\bot$. However, since our list 
+$\LL$ has a linked structure (includes the next lock identifier), we can recursively traverse the 
+list of locks on the path to obtain the trapdoor associated to the path.
+
+For ease of exposition we define several functions that extract or update information of a 
+lock given its identifier as input: $\getStatus(\cdot)$ returns the status of the lock, 
+$\getLeft(\cdot)$ and $\getRight(\cdot)$ return the left and right user involved with the 
+lock, $\getNextLock(\cdot)$ returns the identifier of the next lock, $\setRightUser(\cdot, U)$ 
+sets the right user of the lock to a user $U$, $\setRightLock(\cdot, \lid)$ sets the right lock 
+of the lock to $\lid$, $\updateStatus(\cdot, f)$ sets the status of the lock to a flag $f$, 
+$\generateTrapdoor(\cdot)$ creates a trapdoor associated to the lock, and $\validateTrapdoors
+((\cdots), (\td_1,\ldots,\td_m))$ checks that the trapdoors are associated to the given locks 
+by recursively traversing the path of each given lock.
+
+$\FF_{\sysname}$ defines 5 interfaces. The $\Setup$ interface allows the user $U_0$ (the sender) 
+to setup states and trapdoors to be used later when establishing and releasing the locks. The $\Lock$ 
+interface allows a user to establish locks with its right neighbors using the previously established 
+locks. The $\Extract$ interface allows the user $U_n$ (the receiver) to release the locks that it 
+received using the initially created trapdoors. The $\Release$ interface allows an intermediate user 
+along the path to release the locks with its left neighbors assuming its right locks are released. 
+Lastly, $\mathsf{GetStatus}$ interface allows a user to check the current status of a lock. We note 
+that internally the locks are assigned identifiers that are unique across all paths. Our $\FF_{\sysname}$ 
+ideal functionality can be seen in \cref{fig:ideal-func}.
+
+$\FF_{\sysname}$ makes use of $\FF_{\anon}, \FF_{\smt}$ and $\FF_{\syn}$, thus, it is defined in 
+$(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.
+
+\subsection{Discussion}
+
+We define the security and privacy notions of interest for {\sysname}s, and describe how they 
+are captured by the functionality $\FF_{\sysname}$.
+
+\paragraph{Consistency} A \sysname is consistent if no user can release its left lock without its 
+right lock being released first. Our ideal functionality captures this property as the $\Release$ 
+interface allows a user to release the left lock only if the corresponding right lock has already 
+been released. In case the user is the receiver, the $\Extract$ interface is used for releasing, 
+and it makes sure that there are no further right locks before starting the release of the provided 
+locks. 
+
+\paragraph{Atomicity} Atomicity means that every user in any path is able to release its left lock 
+only if the corresponding right lock is already released. Our ideal functionality enforces this by 
+keeping track of all the locks in the list $\LL$, and in the $\Release$ interface only changing the 
+status of the lock to $\Rel$ if the corresponding next lock is already released (has flag $\Rel$). 
+If the user is the receiver, then the $\Extract$ interface validates that no right lock exists, which 
+signifies that the release can start.
+
+\paragraph{Anonymity} Anonymity requires that each intermediate user does not learn any information 
+about the set of users in a \sysname beyond its direct neighbors.
+%and furthermore, it cannot distinguish if it is part of a single-path or multi-path lock. 
+This is achieved by our ideal functionality since the lock identifiers are sampled at random, and 
+during the locking phase a user only learns the identifiers of its left and right locks, along with 
+its left and right neighbors.
+
+\paragraph{Completeness} A \sysname is complete if the receiver can only start releasing its locks,
+once it has received same number of locks as the trapdoors. More precisely, our ideal functionality 
+generates $v$ trapdoors in the $\Setup$ interface, and in the $\Extract$ interface the release can 
+only begin if the receiver has $v$ locks as well.
+
+\subsection{Universal Composability}
+\label{sec:uc}
+
+We now review the notion of secure realization in the UC framework \cite{canetti}. 
+Intuitively, a protocol realizes an ideal functionality if the adversary has no 
+advantage in distinguishing between an ideal functionality and a real-world protocol, 
+where a simulator $\sdv$ is in charge of translating the messages produced by the 
+ideal functionality for a computational adversary $\adv$. We denote by $\exec_{\pi, 
+\adv, \dist}$ the ensemble of the outputs of the environment $\dist$ when interacting 
+with the adversary $\adv$, and the users running protocol $\pi$. Analogously, we denote  
+by $\exec_{\FF, \sdv, \dist}$ the ensemble of the outputs of the environment $\dist$ 
+when interacting with the simulator $\sdv$, and the ideal functionality $\FF$.
+
+\begin{definition}[Universal Composability]
+A protocol $\pi$ UC-realizes an ideal functionality $\FF$ if for any $\ppt$ adversary 
+$\adv$ there exists a simulator $\sdv$, such that for any environment $\dist$, the 
+ensembles $\exec_{\pi, \adv, \dist}$ and $\exec_{\FF, \sdv, \dist}$ are computationally 
+indistinguishable.
+\end{definition}
+
+\begin{figure*}[!h]
+	\centering
+	
+	\fbox{
+		\begin{minipage}[t]{0.50\textwidth}
+			\procedure[mode=text]{$\Setup(\sid, v, (U_0,U_n))$}{
+				Upon invocation by $U_0$:  												\\
+				$\forall i \in [1,v]$:													\\
+				\quad $\lid_i \sample \{0, 1\}^\lambda$									\\
+				\quad $\td_i \gets \generateTrapdoor(\lid_i)$							\\
+				\quad insert $(\lid_i, \td_i, U_0, \bot, \Init, \bot)$ to $\LL$			\\
+				send$_\anon$ $(\sid, ((\lid_1, \Init),\ldots,(\lid_v, \Init)))$ to $U_0$\\
+				send$_\anon$ $(\sid, v, (\td_1,\ldots,\td_v))$ to $U_n$
+			}
+			\\ \\
+			\procedure[mode=text]{$\Release(\sid, (\lid_1,\ldots,\lid_k))$}{
+				Upon invocation by $U_i$: 												\\
+				$\forall i \in [1,k]$: 													\\
+				\quad if $U_i = U_n$ or $\getRight(\lid_i) \neq U_i$ or 
+				$\getStatus(\lid_i) \neq \Lock$ or $\getStatus(\getNextLock(\lid_i)) 
+				\neq \Rel$	then send$_\smt$ $(\sid, \lid_i, \bot)$ to $U_i$				\\
+				\quad else:																\\
+				\qquad $\updateStatus(\lid_i, \Rel)$										\\
+				\qquad send$_\smt$ $(\sid, \lid_i, \Rel)$ to $\getLeft(\lid_i)$
+			}
+			\\ \\
+			\procedure[mode=text]{$\Extract(\sid, (\lid_1,\ldots,\lid_k),(\td_1,\ldots,\td_v))$}{
+				Upon invocation by $U_n$:												\\
+				$\forall i \in [1,k]$: if $\getRight(\lid_i) \neq U_n$ or 
+				$\getStatus(\lid_i) \neq \Lock$ or 										\\
+				$\getNextLock(\lid_i) \neq \bot$ then abort								\\
+				if \textcolor{blue}{$k \neq v$ or} $\validateTrapdoors
+				((\lid_1,\ldots,\lid_k),(\td_1,\ldots,\td_v)) = \bot$ then abort			\\
+				$\forall i \in [1,k]$: 													\\
+				\quad $\updateStatus(\lid_i, \Rel)$										\\
+				\quad send$_\smt$ $(\sid, \lid_i, \Rel)$ to $\getLeft(\lid_i)$
+			}
+		\end{minipage}
+		\begin{minipage}[t]{0.45\textwidth}
+			\procedure[mode=text]{$\Lock(\sid, (\lid_1,\ldots,\lid_k), 
+				\{(U_1,p_1),\ldots,(U_m,p_m)\})$}{
+				Upon invocation by $U_i$: 												\\
+				$\forall j \in [1,k]$: if $U_i \neq U_0$ and $\getStatus(\lid_j) \neq 
+				\Lock$ and $\getRight(\lid_j) \neq U_i$ the abort						\\
+				\textcolor{blue}{if $\sum_{i=1}^m p_i > k$ then abort}					\\
+				set $\ell = (\lid_1,\ldots,\lid_k)$										\\
+				$\forall j \in [1,m]$:													\\
+				\quad $\forall e \in [1,p_j]$:											\\
+				\qquad $\lid' \sample \{0,1\}^{\lambda}$									\\
+				\qquad sample $\lid^* \sample \ell$ and set $\ell = \ell \setminus 
+				\{\lid^*\}$																\\
+				\qquad if $U_i = U_0$: 													\\
+				\qquad \quad $\setRightUser(\lid^*, U_j)$								\\
+				\qquad \quad set $\lid' = \lid^*$										\\
+				\qquad else: 															\\
+				\qquad \quad insert $(\lid', \bot, U_i, U_j, \Init, \bot)$ into $\LL$	\\
+				\qquad \quad $\setRightLock(\lid^*, \lid')$								\\
+				\qquad send$_\smt$ $(\sid, \lid', \Lock)$ to $\getRight(\lid')$			\\
+				\qquad receive$_\smt$ $(\sid, b)$ from $\getRight(\lid')$				\\
+				\qquad if $b = \bot$ then send$_\smt$ $(\sid, \getRight(\lid'), \bot)$ 
+				to $U_i$																	\\
+				\qquad else:																\\
+				\qquad \quad $\updateStatus(\lid', \Lock)$								\\
+				\qquad \quad send$_\smt$ $(\sid, \lid', \Lock)$ to $U_i$ and $\getRight(\lid')$
+			}
+			\\
+			\procedure[mode=text]{$\mathsf{GetStatus}(\sid, \lid)$}{
+				Upon invocation by $U_i$:												\\
+				%if $\getLeft(\lid) \neq U_i$ or $\getRight(\lid) \neq U_i$ then abort	\\
+				send$_\smt$ $(\sid, \lid, \getStatus(\lid))$ to $U_i$
+			}
+		\end{minipage}
+	}
+	
+	\caption{Ideal functionality $\FF_{\sysname}$ in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.}
+	\label{fig:ideal-func}
+\end{figure*}
