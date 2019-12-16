@@ -160,7 +160,7 @@ indistinguishable.
 				\qquad $\updateStatus(\lid_i, \Rel)$										\\
 				\qquad send$_\smt$ $(\sid, \lid_i, \Rel)$ to $\getLeft(\lid_i)$
 			}
-			\\ \\
+			\\
 			\procedure[mode=text]{$\Extract(\sid, (\lid_1,\ldots,\lid_k),(\td_1,\ldots,\td_v))$}{
 				Upon invocation by $U_n$:												\\
 				$\forall i \in [1,k]$: if $\getRight(\lid_i) \neq U_n$ or 
@@ -175,22 +175,22 @@ indistinguishable.
 		\end{minipage}
 		\begin{minipage}[t]{0.45\textwidth}
 			\procedure[mode=text]{$\Lock(\sid, (\lid_1,\ldots,\lid_k), 
-				\{(U_1,p_1),\ldots,(U_m,p_m)\})$}{
+				\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\})$}{
 				Upon invocation by $U_i$: 												\\
 				$\forall j \in [1,k]$: if $U_i \neq U_0$ and $\getStatus(\lid_j) \neq 
 				\Lock$ and $\getRight(\lid_j) \neq U_i$ the abort						\\
-				\textcolor{blue}{if $\sum_{i=1}^m p_i > k$ then abort}					\\
+				\textcolor{blue}{if $\sum_{i=1}^m p_{j_i} > k$ then abort}				\\
 				set $\ell = (\lid_1,\ldots,\lid_k)$										\\
-				$\forall j \in [1,m]$:													\\
-				\quad $\forall e \in [1,p_j]$:											\\
+				$\forall e \in [1,m]$:													\\
+				\quad $\forall a \in [1,p_{j_e}]$:										\\
 				\qquad $\lid' \sample \{0,1\}^{\lambda}$									\\
 				\qquad sample $\lid^* \sample \ell$ and set $\ell = \ell \setminus 
 				\{\lid^*\}$																\\
 				\qquad if $U_i = U_0$: 													\\
-				\qquad \quad $\setRightUser(\lid^*, U_j)$								\\
+				\qquad \quad $\setRightUser(\lid^*, U_{j_e})$							\\
 				\qquad \quad set $\lid' = \lid^*$										\\
 				\qquad else: 															\\
-				\qquad \quad insert $(\lid', \bot, U_i, U_j, \Init, \bot)$ into $\LL$	\\
+				\qquad \quad insert $(\lid', \bot, U_i, U_{j_e}, \Init, \bot)$ into $\LL$\\
 				\qquad \quad $\setRightLock(\lid^*, \lid')$								\\
 				\qquad send$_\smt$ $(\sid, \lid', \Lock)$ to $\getRight(\lid')$			\\
 				\qquad receive$_\smt$ $(\sid, b)$ from $\getRight(\lid')$				\\
