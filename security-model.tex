@@ -33,7 +33,7 @@ arbitrarily. However, the adversary can neither read nor change the content of t
 We consider a synchronous communication network, where communication proceeds in discrete 
 rounds, as defined in \cite{kmtz} and denoted here as $\FF_{\syn}$. The parties are 
 always aware of the current round, and if a party $P$ sends a message in round $r$, 
-the recipient party $R$ receives the message in the beginning of round $r + 1$. The 
+the recipient receives the message in the beginning of round $r + 1$. The 
 adversary can change the order of messages, but we assume that the order of messages 
 between honest parties cannot be changed (which can easily be realized using message 
 counters). For simplicity, we assume that computation is instantaneous.
@@ -52,11 +52,11 @@ more modular treatment, we only model the cryptographic lock functionality.
 
 $\FF_{\sysname}$ works in interaction with a universe of users $\mathbb{U}$. Additionally, 
 $\FF_{\sysname}$ initializes an empty list $\LL := \emptyset$, which is used to track the 
-locks. The entries of $\LL$ are of the form $(\lid_i, \td_i, U_i, U_{i+1}, f, \\ \lid_{i+1})$, 
-where $\lid_i$ is unique lock identifier, $\td_i$ is the trapdoor of the lock, $U_i$ and $U_{i+1}$ 
+locks. The entries of $\LL$ are of the form $(\lid_i, \td_i, U_i, U_j, f, \\ \lid_{i+1})$, 
+where $\lid_i$ is unique lock identifier, $\td_i$ is the trapdoor of the lock, $U_i$ and $U_j$ 
 are the users connected by the lock (the left and right user, respectively), $f \in \{\Init,\Lock,
 \Rel\}$ is a status flag of the lock, and $\lid_{i+1}$ is the identifier of the next lock on the 
-path. We note that the trapdoors are only associated to the initial locks created for the sender, 
+path. We note that the trapdoors are only associated to the initial locks created from the sender, 
 and in all subsequent locks on the path the trapdoor is set to $\bot$. However, since our list 
 $\LL$ has a linked structure (includes the next lock identifier), we can recursively traverse the 
 list of locks on the path to obtain the trapdoor associated to the path.
@@ -87,6 +87,7 @@ $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.
 \subsection{Discussion}
 
 \TODOP{Add ACID properties.}
+
 We define the security and privacy notions of interest for {\sysname}s, and describe how they 
 are captured by the functionality $\FF_{\sysname}$.
 
@@ -95,12 +96,14 @@ right lock being released first. Our ideal functionality captures this property 
 interface allows a user to release the left lock only if the corresponding right lock has already 
 been released. In case the user is the receiver, the $\Extract$ interface is used for releasing, 
 and it makes sure that there are no further right locks before starting the release of the provided 
-locks. 
+locks.
+
+\MESSAGEE{But in our actual protocol we have a wormhole attack, so consistency does not quite hold?}
 
 \paragraph{Atomicity} Atomicity means that every user in any path is able to release its left lock 
 only if the corresponding right lock is already released. Our ideal functionality enforces this by 
 keeping track of all the locks in the list $\LL$, and in the $\Release$ interface only changing the 
-status of the lock to $\Rel$ if the corresponding next lock is already released (has flag $\Rel$). 
+status of the lock to $\Rel$ if the corresponding next lock is already released (i.e., has flag $\Rel$). 
 If the user is the receiver, then the $\Extract$ interface validates that no right lock exists, which 
 signifies that the release can start.
 
@@ -111,6 +114,10 @@ This is achieved by our ideal functionality since the lock identifiers are sampl
 during the locking phase a user only learns the identifiers of its left and right locks, along with 
 its left and right neighbors.
 
+\MESSAGEE{In our protocols we only achieve relationship anonymity as long as one intermediary is 
+honest. And what about anonymity in the sense that a user cannot distinguish if it is part of a 
+single-path or multi-pat lock.}
+
 \paragraph{Completeness} A \sysname is complete if the receiver can only start releasing its locks,
 once it has received same number of locks as the trapdoors. More precisely, our ideal functionality 
 generates $v$ trapdoors in the $\Setup$ interface, and in the $\Extract$ interface the release can 
@@ -119,15 +126,13 @@ only begin if the receiver has $v$ locks as well.
 \subsection{Universal Composability}
 \label{sec:uc}
 
-We now review the notion of secure realization in the UC framework \cite{canetti}. 
-Intuitively, a protocol realizes an ideal functionality if the adversary has no 
-advantage in distinguishing between an ideal functionality and a real-world protocol, 
-where a simulator $\sdv$ is in charge of translating the messages produced by the 
-ideal functionality for a computational adversary $\adv$. We denote by $\exec_{\pi, 
-\adv, \dist}$ the ensemble of the outputs of the environment $\dist$ when interacting 
-with the adversary $\adv$, and the users running protocol $\pi$. Analogously, we denote  
-by $\exec_{\FF, \sdv, \dist}$ the ensemble of the outputs of the environment $\dist$ 
-when interacting with the simulator $\sdv$, and the ideal functionality $\FF$.
+We now review the notion of secure realization in the UC framework~\cite{canetti}. 
+Intuitively, a protocol realizes an ideal functionality if the adversary has no way 
+to distinguish between the ideal functionality and the real-world protocol, where 
+a simulator is in charge of translating the messages produced by the ideal functionality 
+for the computational adversary. Here $\exec_{\pi, \adv, \dist}$ denotes the ensemble of 
+the outputs of the environment $\dist$ when interacting with the adversary $\adv$ and 
+users running protocol $\pi$.
 
 \begin{definition}[Universal Composability]
 A protocol $\pi$ UC-realizes an ideal functionality $\FF$ if for any $\ppt$ adversary 

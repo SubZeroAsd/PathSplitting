@@ -15,12 +15,14 @@ map $e \colon \GG_1 \times \GG_2 \to \GG_T$, and generators $g_i \in \GG_i$ for 
 We consider Type-III bilinear groups as they represent the state-of-the-art regarding the 
 efficiency and security.
 
-\paragraph{Universal Re-encryption Scheme} 
-
-\MESSAGEE{We need an encryption scheme that allows to re-randomize a given ciphertext, such that the 
-encrypted value remains the same, however the output ciphertext looks different than the input 
-ciphertext. Furthermore, we need to assure that this operation can be performed without access to a 
-secret/public key. This is exactly what universal re-encryption\footnote{\url{https://link.springer.com/chapter/10.1007/978-3-540-24660-2_14}} achieves.}
+\paragraph{Universal Re-encryption Scheme} Universal re-encryption allows to re-encrypt without knowledge 
+of the public key under which a ciphertext was computed. Therefore, one can use it to re-randomize an input 
+ciphertext, such that the encrypted value remains the same, but the output ciphertext looks different than 
+the input ciphertext. Golle et al. \cite{gjjs} showed how to build such a primitive using the ElGamal 
+encryption scheme. This is achieved by appending to a standard ElGamal ciphertext a second ciphertext on 
+the identity element. Since ElGamal is homomorphic, one can use the second ciphertext to alter the encryption 
+factor in the first ciphertext. Hence, one does not need knowledge of the public key in the re-encryption 
+operation.
 
 \subsection{Single-Trapdoor Construction}
 
@@ -29,9 +31,10 @@ secret/public key. This is exactly what universal re-encryption\footnote{\url{ht
 	\framebox[0.78\textwidth]{
 		\begin{minipage}[t]{0.75\textwidth}
 			\underline{{$\langle \Setup_{U_0}(1^\lambda, U_n), \Setup_{U_n}(1^\lambda) \rangle$}}: 
-			On input the security parameter $1^\lambda$, a user identifier $U_n$, sample $(x,y) \sample 
-			\ZZ_q^2$, compute the state $s_1 \gets (g_1^{xy}, g_T^y)$, send $\vec{\td} := (x)$ to $U_n$ 
-			and return $\vec{s} := (s_1)$. \\
+			On input the security parameter $1^\lambda$, a user identifier $U_n$, 
+			obtain the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$,
+			sample $(x,y) \sample \ZZ_q^2$, compute the state $s_1 \gets (g_1^{xy}, g_T^y)$, send 
+			$\vec{\td} := (x)$ to $U_n$ and return $\vec{s} := (s_1)$. \\
 			\underline{$\langle \Lock_{U_i}(\vec{s}, \{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}), 
 			\Lock_{U_{j_1}}(), \ldots, \Lock_{U_{j_m}}() \rangle$}: On input a vector of states  
 			$\vec{s} := (s_1,\ldots,s_l)$, a set of tuples $\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}$, 
@@ -61,7 +64,7 @@ secret/public key. This is exactly what universal re-encryption\footnote{\url{ht
 	\label{fig:single-trapdoor}
 \end{figure*}
 
-\MESSAGEE{Can an intermediary have unequal number of states, keys and witnesses for $\Extract$?}
+%\MESSAGEE{Can an intermediary have unequal number of states, keys and witnesses for $\Extract$?}
 
 \subsection{Multi-Trapdoor Construction}
 
@@ -71,6 +74,7 @@ secret/public key. This is exactly what universal re-encryption\footnote{\url{ht
 		\begin{minipage}[t]{0.75\textwidth}
 			\underline{$\langle \Setup_{U_0}(1^\lambda, v, U_n), \Setup_{U_n}(1^\lambda) \rangle$}: 
 			On input the security parameter $1^\lambda$, a payment value $v$ and a user identifier $U_n$, 
+			obtain the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$,
 			sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$ and $k_t, k_s \sample \mathcal{K}$, secret 
 			share $k_t$ as $([k_t]_1,\ldots[k_t]_v)$, generate ciphertexts $(c_t^{(1)},\ldots,c_t^{(v)}) \gets 
 			(\enc(k_t, x_1),\ldots,\enc(k_t,x_v))$ and $(c_s^{(1)},\ldots,c_s^{(v)}) \gets (\enc(k_s, 
