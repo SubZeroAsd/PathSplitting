@@ -6,6 +6,35 @@
 
 \subsection{Intuition}
 
+We provide two constructions, namely single-trapdoor and multi-trapdoor. The main difference between the 
+two is that in the single-trapdoor construction only a single trapdoor is used, and no matter the number of 
+locks the receiver gets, all of them can be released using the same trapdoor. Hence, the receiver is not 
+forced to wait to receive all the locks intended for him. Whereas in the multi-trapdoor construction we 
+generate as many lock/trapdoor pairs as the amount of coins the sender wants to transfer to the receiver. 
+This means that if the sender wants to send $v$ coins, then he generates $v$ lock/trapdoor pairs, hence, 
+every lock has a unique trapdoor associated to it. Although, from a communication perspective multi-trapdoor 
+construction is more expensive compared to the single-trapdoor construction, it has a feature that allows us 
+to force the receiver to wait for all (or threshold of) the $v$ locks intended for him, before starting the 
+release of the locks. This feature is achieved as follows: the sender generates $v$ lock/trapdoor pairs, and
+two encryption keys $k_s, k_t$, encrypts the trapdoors using the key $k_t$ (therefore, creating a ciphertext 
+$c_t$), secret shares the key $k_t$ into $v$ shares ($[k_t]_1,\ldots,[k_t]_v$), 
+encrypts all these shares individually using the key $k_s$ (therefore, creating $v$ ciphertexts $(c_s^{(1)},
+\ldots,c_s^{(v)})$), includes these ciphertexts inside the $v$ locks that it previously created (one 
+ciphertext per lock), and sends $c_t$ and $k_s$ to the receiver. At this point the receiver has the key $k_s$, 
+which can be used to decrypt the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$, however, he doesn't have 
+the key $k_t$, which will allow him to decrypt the ciphertext $c_t$ that includes the trapdoors he needs 
+to release the locks. Since the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$ are now part of the locks, 
+they will eventually reach the receiver, and at that point the receiver can use the key $k_s$ it received 
+from the sender to decrypt these ciphertexts, and obtain the shares $[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
+Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the ciphertext $c_t$, 
+to obtain the trapdoors of the locks, and start releasing the locks. Hence, the receiver needs to wait for 
+all the $v$ locks to reach him, so that he can decrypt all the ciphertexts and reconstruct the key. Instead of 
+forcing the receiver to wait for all the $v$ locks, we can also force him to wait for a subset of size $t$ of 
+them using a $t$-of-$v$ secret sharing. The locking and releasing mechanisms are identical in both 
+single-trapdoor and multi-trapdoor constructions, and are based on pairings. The main differences between 
+the two constructions are how the setup is performed by the sender, and how the release of the locks from 
+receiver (extraction phase) happens.
+
 \subsection{Cryptographic Building Blocks}
 
 \paragraph{Bilinear Groups} Let $\BilGen$ be a $\ppt$ algorithm that on input a security 
