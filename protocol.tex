@@ -94,7 +94,7 @@ a randomized ciphertext $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(
 			(k_i)^{{r_i}^{-1}}$, and return $\vec{k'} := (k_1',\ldots,k_l')$. \\
 			\underline{$\Verify(\vec{s}, \vec{k})$}: On input a vector of states $\vec{s} := (s_1,\ldots,
 			s_l)$ and a vector of keys $\vec{k} := (k_1,\ldots,k_l)$, return 1 if $\forall i \in [1,l]$, 
-			parse $s_i := (s_i^{(1)}, s_i^{(2)})$ and $e(k_i, g_2) \? s_i^{(2)}$ holds, and 
+			parse $s_i$ as $(s_i^{(1)}, s_i^{(2)})$ and $e(k_i, g_2) \? s_i^{(2)}$ holds, and 
 			0 otherwise.
 		\end{minipage}
 	}
@@ -115,12 +115,13 @@ a randomized ciphertext $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(
 			\underline{$\langle \Setup_{U_0}(1^\lambda, v, U_n), \Setup_{U_n}(1^\lambda) \rangle$}: 
 			On input the security parameter $1^\lambda$, a payment value $v$ and a user identifier $U_n$, 
 			obtain the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$,
-			sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$, and $k_t, k_s \sample \mathcal{K}$, secret 
-			share $k_t$ as $([k_t]_1,\ldots[k_t]_v)$, compute the ciphertexts $c_t \gets 
-			\enc(k_t, x_1 \concat\cdots\concat x_v)$ and $(c_s^{(1)},\ldots,c_s^{(v)}) \gets (\enc(k_s, 
-			[k_t]_1),\ldots, \enc(k_s, [k_t]_v))$, compute the states $(s_1,\ldots,s_v) \gets ((g_1^{x_1y}, 
-			g_T^y, c_s^{(1)}),\ldots,(g_1^{x_vy}, g_T^y, c_s^{(v)}))$, send 
-			$\vec{\td} := (k_s, c_t, v)$ to $U_n$, and return $\vec{s} := (s_1,\ldots,s_v)$ to $U_0$. \\
+			sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$, $(\sk_t, \pk_t) \sample \kgen(1^\lambda)$ and 
+			$(\sk_s, \pk_s) \sample \kgen(1^\lambda)$, secret share $\sk_t$ as $([\sk_t]_1,\ldots[\sk_t]_v)$, 
+			compute the ciphertexts $c_t \gets \enc(\pk_t, x_1 \concat\cdots\concat x_v)$ and $(c_s^{(1)},
+			\ldots,c_s^{(v)}) \gets (\enc(\pk_s, [\sk_t]_1),\ldots,\enc(\pk_s, [\sk_t]_v))$, compute the states 
+			$(s_1,\ldots,s_v) \gets ((g_1^{x_1y},g_T^y, c_s^{(1)}),\ldots,(g_1^{x_vy}, g_T^y, c_s^{(v)}))$, send 
+			$\vec{\td} := ((\sk_s,\pk_s), c_t, v)$ to $U_n$, and return $\vec{s} := (s_1,\ldots,s_v)$ to 
+			$U_0$. \\
 			\underline{$\langle \Lock_{U_i}(\vec{s}, \{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}), 
 			\Lock_{U_{j_1}}(), \ldots, \Lock_{U_{j_m}}() \rangle$}: On input a vector of states  
 			$\vec{s} := (s_1,\ldots,s_l)$, a set of tuples $\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}$, 
@@ -131,11 +132,11 @@ a randomized ciphertext $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(
 			\renc(s_a^{(3)}))$. Finally, send $\vec{s}^\dag := (s_1^\dag,\ldots,s_{p_{j_e}}^\dag)$ to 
 			$U_{j_e}$, and store $\vec{w} := (r_1,\ldots,r_m)$. \\
 			\underline{$\Extract(\vec{s}, \vec{\td})$}: On input a vector of states  
-			$\vec{s} := (s_1,\ldots,s_l)$, a vector of trapdoors $\vec{td} := (k_s, c_t, v)$, 
+			$\vec{s} := (s_1,\ldots,s_l)$, a vector of trapdoors $\vec{td} := ((\sk_s,\pk_s), c_t, v)$, 
 			if $l \neq v$, then return $\bot$. Otherwise, $\forall i$ in $[1,l]$, parse $s_i$ as 
-			$(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$ and decrypt to obtain $[k_t]_i \gets 
-			\dec(k_s, s_i^{(3)})$. If any $[k_t]_i = \bot$, then return $\bot$, else reconstruct 
-			$k_t$ from $([k_t]_1,\ldots,[k_t]_v)$. Decrypt $x \gets \dec(k_t, c_t)$, if $x = \bot$, then 
+			$(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$ and decrypt to obtain $[\sk_t]_i \gets 
+			\dec(\sk_s, s_i^{(3)})$. If any $[\sk_t]_i = \bot$, then return $\bot$, else reconstruct 
+			$\sk_t$ from $([\sk_t]_1,\ldots,[\sk_t]_v)$. Compute $x \gets \dec(\sk_t, c_t)$, if $x = \bot$, then 
 			return $\bot$, otherwise, parse $x$ as $(x_1,\ldots,x_v)$, $\forall i$ in $[1,v]$ check whether 
 			$e((s_i^{(1)})^{{x_i}^{-1}}, g_2) \? s_i^{(2)}$. If the check passes, set 
 			$k_i \gets (s_i^{(1)})^{{x_i}^{-1}}$, otherwise return $\bot$. Finally, return $\vec{k} := 
@@ -145,7 +146,7 @@ a randomized ciphertext $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(
 			(k_i)^{{r_i}^{-1}}$, and return $\vec{k'} := (k_1',\ldots,k_l')$. \\
 			\underline{$\Verify(\vec{s}, \vec{k})$}: On input a vector of states $\vec{s} := (s_1,\ldots,
 			s_l)$ and a vector of keys $\vec{k} := (k_1,\ldots,k_l)$, return 1 if $\forall i \in [1,l]$, 
-			parse $s_i := (s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$ and $e(k_i, g_2) \? s_i^{(2)}$ holds, and 
+			parse $s_i$ as $(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$ and $e(k_i, g_2) \? s_i^{(2)}$ holds, and 
 			0 otherwise.
 		\end{minipage}
 	}
