@@ -26,32 +26,43 @@ the key $k_t$, which will allow him to decrypt the ciphertext $c_t$ that include
 to release the locks. Since the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$ are now part of the locks, 
 they will eventually reach the receiver, and at that point the receiver can use the key $k_s$ it received 
 from the sender to decrypt these ciphertexts, and obtain the shares $[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
-Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the ciphertext $c_t$, 
+Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the ciphertext $c_t$ 
 to obtain the trapdoors of the locks, and start releasing the locks. Hence, the receiver needs to wait for 
-all the $v$ locks to reach him, so that he can decrypt all the ciphertexts and reconstruct the key. Instead of 
-forcing the receiver to wait for all the $v$ locks, we can also force him to wait for a subset of size $t$ of 
-them using a $t$-of-$v$ secret sharing. The locking and releasing mechanisms are identical in both 
-single-trapdoor and multi-trapdoor constructions, and are based on pairings. The main differences between 
-the two constructions are how the setup is performed by the sender, and how the release of the locks from 
-receiver (extraction phase) happens.
+all the $v$ locks to reach him, so that he can decrypt all the ciphertexts that are part of the locks and 
+reconstruct the key $k_t$. Instead of forcing the receiver to wait for all the $v$ locks, we can also force 
+him to wait for a subset of size $t$ of them using a $t$-out-of-$v$ secret sharing. The locking and releasing 
+mechanisms are identical in both the single-trapdoor and multi-trapdoor constructions, and are based on pairings. 
+The differences between the two constructions are how the setup is performed by the sender, and how the release 
+of the locks from receiver (extraction phase) happens.
 
 \subsection{Cryptographic Building Blocks}
 
-\paragraph{Bilinear Groups} Let $\BilGen$ be a $\ppt$ algorithm that on input a security 
-parameter $1^\lambda$ outputs $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen
-(1^\lambda)$, where $\GG_1, \GG_2$ and $\GG_T$ are groups of prime order $q$ with bilinear 
-map $e \colon \GG_1 \times \GG_2 \to \GG_T$, and generators $g_i \in \GG_i$ for $i \in \{1,2,T\}$.
-We consider Type-III bilinear groups as they represent the state-of-the-art regarding the 
-efficiency and security.
+\paragraph{Bilinear Groups} Let $\BilGen$ be a $\ppt$ algorithm that on input a security parameter 
+$1^\lambda$ outputs $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$, where 
+$\GG_1, \GG_2$ and $\GG_T$ are groups of prime order $q$ with bilinear map $e \colon \GG_1 \times 
+\GG_2 \to \GG_T$, and generators $g_i \in \GG_i$ for $i \in \{1,2,T\}$. We consider Type-III bilinear 
+groups as they represent the state-of-the-art regarding the efficiency and security.
 
 \paragraph{Universal Re-encryption Scheme} Universal re-encryption allows to re-encrypt without knowledge 
 of the public key under which a ciphertext was computed. Therefore, one can use it to re-randomize an input 
 ciphertext, such that the encrypted value remains the same, but the output ciphertext looks different than 
-the input ciphertext. Golle et al. \cite{gjjs} showed how to build such a primitive using the ElGamal 
+the input ciphertext. Universal re-encryption scheme is composed of the algorithms $(\kgen, \enc, \dec, \renc)$, 
+where $(\sk, \pk) \gets \kgen(1^\lambda)$, $c \gets \enc(\pk, m)$, $m \gets \dec(\sk, c)$, and 
+$c' \gets \renc(c)$, for a secret/public key pair $(\sk, \pk)$, a message $m$, a ciphertext $c$, and a 
+randomized ciphertext $c'$. Golle et al. \cite{gjjs} showed how to build such a primitive using the ElGamal 
 encryption scheme. This is achieved by appending to a standard ElGamal ciphertext a second ciphertext on 
 the identity element. Since ElGamal is homomorphic, one can use the second ciphertext to alter the encryption 
 factor in the first ciphertext. Hence, one does not need knowledge of the public key in the re-encryption 
-operation.
+operation. The scheme of Golle et al. is defined as follows. $\kgen$ on input the security parameter $1^\lambda$, 
+samples a random $x \sample \ZZ_q$, computes $y \gets g^x$, and outputs $\sk := x, \pk := y$. $\enc$ on input 
+a message $m$ and a public key $y$, samples a random encryption factor $r := (k_0, k_1) \sample \ZZ_q^2$, and 
+outputs $c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)] := [(my^{k_0},g^{k_0});(y^{k_1},g^{k_1})]$. $\dec$ on 
+input a secret key $x$ and a ciphertext $c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)]$, computes $m_0 \gets 
+\alpha_0 / \beta_0^x$ and $m_1 \gets \alpha_1 / \beta_1^x$. If $m_1 = 1$, then it outputs $m := m_0$. Otherwise, 
+the decryption fails, and it outputs $\bot$. $\renc$ on input a ciphertext $c := [(\alpha_0,\beta_0); 
+(\alpha_1,\beta_1)]$, samples a random re-encryption factor $r' := (k_0',k_1') \sample \ZZ_q^2$, and outputs 
+a randomized ciphertext $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
+\beta_0\beta_1^{k_0'});(\alpha_1^{k_1'},\beta_1^{k_1'})]$.
 
 \subsection{Single-Trapdoor Construction}
 
@@ -63,16 +74,16 @@ operation.
 			On input the security parameter $1^\lambda$, a user identifier $U_n$, 
 			obtain the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$,
 			sample $(x,y) \sample \ZZ_q^2$, compute the state $s_1 \gets (g_1^{xy}, g_T^y)$, send 
-			$\vec{\td} := (x)$ to $U_n$ and return $\vec{s} := (s_1)$. \\
+			$\vec{\td} := (x)$ to $U_n$ and return $\vec{s} := (s_1)$ to $U_0$. \\
 			\underline{$\langle \Lock_{U_i}(\vec{s}, \{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}), 
 			\Lock_{U_{j_1}}(), \ldots, \Lock_{U_{j_m}}() \rangle$}: On input a vector of states  
 			$\vec{s} := (s_1,\ldots,s_l)$, a set of tuples $\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}$, 
 			where $U_{j_i}$ is a user identifier and $p_{j_i}$ is the corresponding partition size, 
-			$\forall e$ in $[1,m]$, sample a randomness $r_e \sample \ZZ_q$, pick $p_{j_e}$ many states 
+			$\forall e$ in $[1,m]$, sample a random $r_e \sample \ZZ_q$, pick $p_{j_e}$ many states 
 			$(s_1,\ldots,s_{p_{j_e}})$ from $\vec{s}$, $\forall a$ in $[1,p_{j_e}]$, parse state $s_a$ 
-			as $(s_a^{(1)},s_a^{(2)})$, set $\ell_a \gets (s_a^{(2)})^r, s_a^\dag \gets 
-			((s_a^{(1)})^r, \ell_a)$. Finally, send $\vec{s}^\dag := (s_1^\dag,\ldots,
-			s_{p_{j_e}}^\dag)$ to $U_{j_e}$, and store $\vec{w} := (r_1,\ldots,r_m)$. \\
+			as $(s_a^{(1)},s_a^{(2)})$, set $s_a^\dag \gets ((s_a^{(1)})^{r_e}, (s_a^{(2)})^{r_e})$. Finally, 
+			send $\vec{s}^\dag := (s_1^\dag,\ldots,s_{p_{j_e}}^\dag)$ to $U_{j_e}$, and store 
+			$\vec{w} := (r_1,\ldots,r_m)$. \\
 			\underline{$\Extract(\vec{s}, \vec{\td})$}: On input a vector of states $\vec{s} := (s_1,
 			\ldots,s_l)$, a vector of trapdoors $\vec{\td} := (x)$, $\forall i$ in $[1,l]$, parse $s_i$ as 
 			$(s_i^{(1)}, s_i^{(2)})$, check whether $e((s_i^{(1)})^{x^{-1}}, g_2) \? s_i^{(2)}$. If the 
@@ -104,30 +115,29 @@ operation.
 			\underline{$\langle \Setup_{U_0}(1^\lambda, v, U_n), \Setup_{U_n}(1^\lambda) \rangle$}: 
 			On input the security parameter $1^\lambda$, a payment value $v$ and a user identifier $U_n$, 
 			obtain the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$,
-			sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$ and $k_t, k_s \sample \mathcal{K}$, secret 
-			share $k_t$ as $([k_t]_1,\ldots[k_t]_v)$, generate ciphertexts $(c_t^{(1)},\ldots,c_t^{(v)}) \gets 
-			(\enc(k_t, x_1),\ldots,\enc(k_t,x_v))$ and $(c_s^{(1)},\ldots,c_s^{(v)}) \gets (\enc(k_s, 
+			sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$, and $k_t, k_s \sample \mathcal{K}$, secret 
+			share $k_t$ as $([k_t]_1,\ldots[k_t]_v)$, compute the ciphertexts $c_t \gets 
+			\enc(k_t, x_1 \concat\cdots\concat x_v)$ and $(c_s^{(1)},\ldots,c_s^{(v)}) \gets (\enc(k_s, 
 			[k_t]_1),\ldots, \enc(k_s, [k_t]_v))$, compute the states $(s_1,\ldots,s_v) \gets ((g_1^{x_1y}, 
 			g_T^y, c_s^{(1)}),\ldots,(g_1^{x_vy}, g_T^y, c_s^{(v)}))$, send 
-			$\vec{\td} := (k_s, (c_t^{(1)},\ldots,c_t^{(v)}))$ to $U_n$, and return 
-			$\vec{s} := (s_1,\ldots,s_v)$. \\
+			$\vec{\td} := (k_s, c_t, v)$ to $U_n$, and return $\vec{s} := (s_1,\ldots,s_v)$ to $U_0$. \\
 			\underline{$\langle \Lock_{U_i}(\vec{s}, \{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}), 
 			\Lock_{U_{j_1}}(), \ldots, \Lock_{U_{j_m}}() \rangle$}: On input a vector of states  
 			$\vec{s} := (s_1,\ldots,s_l)$, a set of tuples $\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}$, 
 			where $U_{j_i}$ is a user identifier and $p_{j_i}$ is the corresponding partition size, 
-			$\forall e$ in $[1,m]$, sample a randomness $r_e \sample \ZZ_q$, pick $p_{j_e}$ many unused 
+			$\forall e$ in $[1,m]$, sample a random $r_e \sample \ZZ_q$, pick $p_{j_e}$ many unused 
 			states $(s_1,\ldots,s_{p_{j_e}})$ from $\vec{s}$, $\forall a$ in $[1,p_{j_e}]$, parse state $s_a$ 
-			as $(s_a^{(1)},s_a^{(2)},s_a^{(3)})$, set $\ell_a \gets (s_a^{(2)})^r, s_a^\dag \gets 
-			((s_a^{(1)})^r, \ell_a, \rand(s_a^{(3)}))$. Finally, send $\vec{s}^\dag := (s_1^\dag,\ldots,
-			s_{p_{j_e}}^\dag)$ to $U_{j_e}$, and store $\vec{w} := (r_1,\ldots,r_m)$. \\
+			as $(s_a^{(1)},s_a^{(2)},s_a^{(3)})$, set $s_a^\dag \gets ((s_a^{(1)})^{r_e}, (s_a^{(2)})^{r_e}, 
+			\renc(s_a^{(3)}))$. Finally, send $\vec{s}^\dag := (s_1^\dag,\ldots,s_{p_{j_e}}^\dag)$ to 
+			$U_{j_e}$, and store $\vec{w} := (r_1,\ldots,r_m)$. \\
 			\underline{$\Extract(\vec{s}, \vec{\td})$}: On input a vector of states  
-			$\vec{s} := (s_1,\ldots,s_l)$, a vector of trapdoors $\vec{td} := (k_s, (c_1,\ldots,c_v))$, 
+			$\vec{s} := (s_1,\ldots,s_l)$, a vector of trapdoors $\vec{td} := (k_s, c_t, v)$, 
 			if $l \neq v$, then return $\bot$. Otherwise, $\forall i$ in $[1,l]$, parse $s_i$ as 
-			$(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$, and decrypt to obtain $[k_t]_i \gets 
+			$(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$ and decrypt to obtain $[k_t]_i \gets 
 			\dec(k_s, s_i^{(3)})$. If any $[k_t]_i = \bot$, then return $\bot$, else reconstruct 
-			$k_t$ from $([k_t]_1,\ldots,[k_t]_v)$. Then, $\forall i$ in $[1,v]$, decrypt 
-			$x_i \gets \dec(k_t, c_i)$, if $x_i = \bot$, then return $\bot$, otherwise, 
-			check whether $e((s_i^{(1)})^{{x_i}^{-1}}, g_2) \? s_i^{(2)}$. If the check passes, set 
+			$k_t$ from $([k_t]_1,\ldots,[k_t]_v)$. Decrypt $x \gets \dec(k_t, c_t)$, if $x = \bot$, then 
+			return $\bot$, otherwise, parse $x$ as $(x_1,\ldots,x_v)$, $\forall i$ in $[1,v]$ check whether 
+			$e((s_i^{(1)})^{{x_i}^{-1}}, g_2) \? s_i^{(2)}$. If the check passes, set 
 			$k_i \gets (s_i^{(1)})^{{x_i}^{-1}}$, otherwise return $\bot$. Finally, return $\vec{k} := 
 			(k_1,\ldots,k_l)$. \\
 			\underline{$\Release(\vec{k}, \vec{w})$}: On input a vector of keys $\vec{k} := (k_1,\ldots,k_l)$, 
