@@ -73,11 +73,11 @@ a randomized ciphertext $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(
 			\underline{{$\langle \Setup_{U_0}(1^\lambda, U_n), \Setup_{U_n}(1^\lambda) \rangle$}}: 
 			On input the security parameter $1^\lambda$, a user identifier $U_n$, 
 			obtain the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$,
-			sample $(x,y) \sample \ZZ_q^2$, compute the state $s_1 \gets (g_1^{xy}, g_T^y)$, send 
-			$\vec{\td} := (x)$ to $U_n$ and return $\vec{s} := (s_1)$ to $U_0$. \\
+			sample $(x,y) \sample \ZZ_q^2$, compute the state $s_0 \gets (g_1^{xy}, g_T^y)$, send 
+			$\vec{\td} := (x)$ to $U_n$ and return $\vec{s} := (s_0)$ to $U_0$. \\
 			\underline{$\langle \Lock_{U_i}(\vec{s}, \{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}), 
 			\Lock_{U_{j_1}}(), \ldots, \Lock_{U_{j_m}}() \rangle$}: On input a vector of states  
-			$\vec{s} := (s_1,\ldots,s_l)$, a set of tuples $\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}$, 
+			$\vec{s}$, a set of tuples $\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}$, 
 			where $U_{j_i}$ is a user identifier and $p_{j_i}$ is the corresponding partition size, 
 			$\forall e$ in $[1,m]$, sample a random $r_e \sample \ZZ_q$, pick $p_{j_e}$ many states 
 			$(s_1,\ldots,s_{p_{j_e}})$ from $\vec{s}$, $\forall a$ in $[1,p_{j_e}]$, parse state $s_a$ 
