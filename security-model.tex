@@ -85,6 +85,7 @@ $\FF_{\sysname}$ makes use of $\FF_{\anon}, \FF_{\smt}$ and $\FF_{\syn}$, thus, 
 $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.
 
 \subsection{Discussion}
+\label{sec:discussion}
 
 \TODOP{Add ACID properties.}
 
@@ -98,14 +99,13 @@ been released. In case the user is the receiver, the $\Extract$ interface is use
 and it makes sure that there are no further right locks before starting the release of the provided 
 locks.
 
-\MESSAGEE{But in our actual protocol we have a wormhole attack, so consistency does not quite hold?}
+\MESSAGEE{But in our actual protocol we have a wormhole attack, so consistency should not quite hold?}
 
 \paragraph{Atomicity} Atomicity means that every user in any path is able to release its left lock 
-only if the corresponding right lock is already released. Our ideal functionality enforces this by 
-keeping track of all the locks in the list $\LL$, and in the $\Release$ interface only changing the 
-status of the lock to $\Rel$ if the corresponding next lock is already released (i.e., has flag $\Rel$). 
-If the user is the receiver, then the $\Extract$ interface validates that no right lock exists, which 
-signifies that the release can start.
+only if the corresponding right lock is already released, and furthermore, the receiver can only start extracting once it has received all the locks intended for him. Our ideal functionality enforces this by 
+keeping track of all the locks in the list $\LL$, and in the $\Release$ interface only changes the 
+status of a lock to $\Rel$ if the corresponding next lock is already released (i.e., has flag $\Rel$). 
+If the user is the receiver, then the $\Extract$ interface validates that no right lock exists, and that the number of locks received is equal to the number of trapdoors that the receiver has (i.e., the receiver has received all the locks intended for him). Only if these conditions are satisfied the release can start.
 
 \paragraph{Anonymity} Anonymity requires that each intermediate user does not learn any information 
 about the set of users in a \sysname beyond its direct neighbors.

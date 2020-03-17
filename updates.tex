@@ -7,29 +7,28 @@
 	\centering
 	\begin{tabular}{|l|c|c|c|} \hline
 		&	Malicious Receiver	&	Malicious Intermediary	&	Malicious Receiver \& Intermediary \\ \hline
-		Single-trapdoor & {\cmark$^*$} & \xmark & \xmark \\ \hline
-		Multi-trapdoor 	& \cmark & \cmark & ? \\ \hline
+		Single-trapdoor & \xmark & \xmark{$^*$} & \xmark \\ \hline
+		Multi-trapdoor 	& \cmark & \cmark & \cmark \\ \hline
 	\end{tabular}
 	
-	{\footnotesize $^*$If we do not consider partial (early) release as an attack.}
-	\label{tab:attackermodels}
+	{\footnotesize $^*$Attack exists, but not against our currently defined security properties.}
 	\caption{Attack models against our constructions.}
+	\label{table:models}
 \end{table*}
 
 The list of attacker models that we consider, and whether our constructions provide security 
-against them are shown in Table \ref{tab:attackermodels}. A checkmark (\cmark) indicates that our 
-construction is security in the model, and an xmark (\xmark) indicates that there exists an 
-attack against our construction in the model.
+against them are shown in Table \ref{table:models}, where providing security means that 
+a construction satisfies the properties of interest defined in \cref{sec:discussion}. 
+A checkmark (\cmark) indicates that our construction satisfies the properties (i.e., is secure) 
+in the model, and an xmark (\xmark) indicates that there exists an attack in the model.
 
 \paragraph{Malicious Receiver} The only difference between our single-trapdoor and 
 multi-trapdoor constructions is that in the multi-trapdoor construction we are forcing 
 the receiver to wait to receive all the locks intended for him, before obtaining the 
-trapdoor and starting the release. Hence, if we do not consider partial (early) release 
-of the locks by the receiver as an attack, then both our construction achieve the same 
-security guarantees against a malicious receiver.
-
-\MESSAGEP{What kind of attack from the receiver actually even makes sense? After all the 
-receiver just wants to receive money, and is not paying anyone.}
+trapdoor and starting the release. Hence, single-trapdoor construction does not fully 
+achieve the atomicity property as defined in \cref{sec:discussion}, while in our definition 
+of atomicity we assume that the receiver cannot start releasing without receiving all the 
+locks intended for him.
 
 \paragraph{Malicious Intermediary} In case of a malicious intermediary our single-trapdoor 
 construction does not provide adequate security. The reason for this is that a malicious 
@@ -37,39 +36,43 @@ intermediary who receives a lock/value pair $(\ell, \mathsf{amt})$, can split an
 two randomized locks $(\ell', \mathsf{amt}-\mathsf{dust})$ and $(\ell', \mathsf{dust})$ 
 (for $\mathsf{dust} \ll \mathsf{amt}$), and forward the one with $\mathsf{dust}$ amount to 
 the next intermediary. Afterwards, in the release phase it will learn the trapdoor and receive 
-$\mathsf{amt}$ amount form the intermediary before him, even though he paid just $\mathsf{dust}$ 
+$\mathsf{amt}$ amount from the intermediary before him, even though he paid just $\mathsf{dust}$ 
 amount to the intermediary after him. This attack is mitigated in our multi-trapdoor 
 construction as we have the locks tied to unit amounts. Hence, an intermediary can only 
 receive as many coins as it forward to the intermediary after him.
 
+\MESSAGEE{This described attack by default does not break any of the properties that we 
+have defined in \cref{sec:discussion}. Therefore, we need to extend our definitions to 
+capture this attack. One way to do this is to say that we require an intermediary only 
+to be able to release its left lock(s), when all of his right locks are released. However, 
+this does not take into account that some payment paths may fail, while others succeed. 
+In this case it might be natural for the intermediary to receive the money only on the 
+payment paths that succeeded. Do we want to model this or just force that either all 
+paths succeeded or none go through?}
+
 \paragraph{Malicious Receiver \& Intermediary} Previously described attack about the malicious 
 intermediary in single-trapdoor construction persists here too. However, this attack is even 
 more powerful now if we consider receiver/intermediary collusion. As in this case, the receiver 
-can just give the trapdoor to the intermediary. 
-%In multi-trapdoor construction the receiver 
-%does not have the trapdoor to share with the intermediary, however he has the encrypted 
-%trapdoors, and decryption key that can decrypt the ciphertexts that are part of the locks. 
-%Hence, the receiver can share the encrypted trapdoors and the decryption key with the 
-%intermediary, who can use the key to decrypt the ciphertexts that are part of the locks and 
-%that pass through him. By doing so, the intermediary collects the key shares that he needs to 
-%reconstruct the key needed to decrypt the ciphertexts that contain the trapdoors. 
-%Depending on the sharing threshold used, the intermediary might get luck, and collect enough 
-%shares that at the end it can reconstruct the trapdoor, and perform the above mentioned attack.
-
-\MESSAGEP{Need to discuss the consequences of the receiver/intermediary collusion for multi-trapdoor construction.}
+can just give share trapdoor to the intermediary. This will break the consistency property. 
+In multi-trapdoor construction the receiver does not have the trapdoors in the clear, and needs 
+to wait to receive all the locks before it can reconstruct enough shares to obtain the trapdoors. 
+Hence, it has nothing to share with an intermediary until it receives all the locks intended for 
+him. Furthermore, as argued above, in multi-trapdoor construction one cannot further split down 
+to $\mathsf{dust}$ amounts, as we assume usage of unit amounts.
 
 \subsection{Construction with Single Trapdoor}
 
 It was suggested to look into a construction that allows an intermediary to create a mask and 
 do the split as $(\ell \cdot \ell_\mathsf{mask}, \mathsf{dust})$ and $(\ell_\mathsf{mask}, 
-\mathsf{amt}-\mathsf{dust})$. The hope is that such a construction will prevent the attack of 
-a malicious intermediary in the single-trapdoor construction described in 
-\cref{sec:attackermodels}. However, a malicious intermediary can just ignore and not use the 
-mask at all, and then you are back in the scenario described above. As long as we are not using 
-unit amount, or we do not tie the amounts and trapdoors somehow (such that an update to one 
-affects the other), such attacks seem to be unpreventable. A malicious intermediary can create 
-any form of a lock, and attack any amount to it. 
-
-\MESSAGEP{We need to discuss this in more detail.}
+\mathsf{amt}-\mathsf{dust})$, where additionally, the encryption of $\mathsf{mask}$ is given to 
+the receiver.. The hope is that such a construction will prevent the attack of a malicious 
+intermediary in the single-trapdoor construction described in \cref{sec:attackermodels}. 
+However, absent of any form of proof, a malicious intermediary can just ignore and not use the 
+mask at all, and then you are back in the scenario that attack applies. As long as we are not 
+using unit amount, or we do not tie the amounts and trapdoors (in such a way that an update to 
+one affects the other), such attacks seem to be unpreventable. A malicious intermediary can 
+create a valid looking lock, and attach any amount to it. That being said, if we include some 
+form of correct-behavior proof from the intermediary, then this approach might work. The 
+question is what exactly is the statement that the intermediary is trying to proof here?
 
 \clearpage
