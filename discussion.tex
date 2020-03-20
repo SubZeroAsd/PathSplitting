@@ -1,0 +1,9 @@
+\section{Discussions from last meeting}
+
+\begin{itemize}
+	\item Pairing-based construction cannot be implemented in today's Lightning Network, hence, it would be beneficial to have a practical solution that can be used with Bitcoin. Therefore, first we need to focus on a construction without pairings. Achieving only security but no privacy is sufficient in this regard.
+	\item One argument in favor of pairing-based construction is that it allows self-randomizability of the locks without sending the randomization factors to the receiver in any form.
+	\item AMP targets source routing and achieve receiver atomicity (receiver has to wait for all transactions to reach him), but uses HTLC which breaks anonymity. Spider targets non-source routing (uses routers to queue up transactions), but provides no atomicity. We target non-source routing, and achieve relationship anonymity (assuming at least one honest intermediary).
+	\item We should aim to have a unified ideal functionality, that includes both payment channel  and lock functionality. This implies that we should also have a unified protocol description, where we separate the system level details from actual cryptographic construction details using different colors. Also, have one set of properties and discuss how we achieve them with the overall protocol.
+	\item Get rid of Definition 3.1, as it confuses reviewer to have both a formal definition and an ideal functionality describing same stuff.
+\end{itemize}
