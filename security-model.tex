@@ -107,6 +107,7 @@ keeping track of all the locks in the list $\LL$, and in the $\Release$ interfac
 status of a lock to $\Rel$ if the corresponding next lock is already released (i.e., has flag $\Rel$). 
 If the user is the receiver, then the $\Extract$ interface validates that no right lock exists, and that the number of locks received is equal to the number of trapdoors that the receiver has (i.e., the receiver has received all the locks intended for him). Only if these conditions are satisfied the release can start.
 
+\MESSAGEE{Atomicity receiver: only if all subpaths get to him, and honest users don't lose money.}
 \paragraph{Anonymity} Anonymity requires that each intermediate user does not learn any information 
 about the set of users in a \sysname beyond its direct neighbors.
 %and furthermore, it cannot distinguish if it is part of a single-path or multi-path lock. 
@@ -140,6 +141,64 @@ $\adv$ there exists a simulator $\sdv$, such that for any environment $\dist$, t
 ensembles $\exec_{\pi, \adv, \dist}$ and $\exec_{\FF, \sdv, \dist}$ are computationally 
 indistinguishable.
 \end{definition}
+
+\begin{figure*}[!t]
+\centering
+\fbox{\parbox{\textwidth}{
+
+\textbf{Open Channel:} On input $(\open, c_{\langle U,U' \rangle}, v, U', t, f)$ from a user 
+$U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed	(i.e., contains valid 
+identifiers and it is not a duplicate), and replies with $(c_{\langle U,U' \rangle}, v, t, f)$ 
+to $U'$, who can either abort or authorize the operation. In the latter case, $\FF$ appends 
+the tuple $(c_{\langle U,U' \rangle}, v, t, f)$ to $\BB$ and $(c_{\langle U,U' \rangle}, v, 
+t, h)$ to $\LL$, for some random $h$. Finally, $\FF$ returns $h$ to $U$ and $U'$. \\
+
+\textbf{Close Channel:} On input $(\close, c_{\langle U,U' \rangle}, h)$ from a user $U$ or $U'$, 
+the ideal functionality $\FF$ parses $\BB$ for an entry $(c_{\langle U,U' \rangle}, v, t, f)$ and 
+$\LL$ for an entry $(c_{\langle U,U' \rangle}, v', t', h)$ for $h \neq \bot$. If $c_{\langle 
+U,U' \rangle} \in \CC$ or $t' > |\BB|$ or $t' > |\BB|$, then $\FF$ aborts. Otherwise, $\FF$ 
+adds the entry $(c_{\langle U,U' \rangle}, v', t')$ to $\BB$ and adds $c_{\langle U,U' \rangle}$ 
+to $\CC$. Lastly, $\FF$ notifies both $U$ and $U'$ with a message $(c_{\langle U,U' \rangle}, 
+\bot, h)$. \\
+
+\textbf{Payment:} On input $(\mathsf{pay}, v, U_{n+1})$ from a user $U_0$, $\FF$ initializes 
+the set $\JJ$ and lists $\DD, \HH, \VV$ as empty, sets $\VV[U_0] = v$, and executes the following 
+interactive protocol:
+
+\begin{enumerate}
+	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{get-}
+	\mathsf{split}, v_i)$ to $U_i$, who replies with $(\mathsf{split}, \{(U_i^1,v_i^1,t_i^1),
+	\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. If the set is empty or $\sum_{j=1}^{k_i} v_i^j 
+	\neq v_i$, then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
+	random $h_i^j$, and parses $\BB$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
+	v^*, t^*, f^*)$. If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
+	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ via an anonymous communication 
+	channel, adds $h_i^j$ to $\HH[U_i^j]$ and sets $\VV[U_i^j] = \VV[U_i^j] + v_i^j$. 
+	Next, $\FF$ checks whether for all entries of the form $(c_{\langle U_i,U_i^j \rangle}, 
+	v^*, \cdot, \cdot) \in \LL$, it holds that $v^* \geq v_i^j$. If this is the case $\FF$ 
+	adds $d_i^j = (c_{\langle U_i,U_i^j \rangle},v^* - v_i^j, t_i^j, \bot)$ to $\DD[U_i]$. where 
+	$(c_{\langle U_i,U_i^j \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the lowest 
+	$v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, then 
+	$\FF$ aborts.
+	
+	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ queries $U_i$ with $\HH[U_i]$ through an 
+	anonymous communication channel. Each user can reply either with $\top$ or $\bot$. If 
+	$U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
+	
+	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
+	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, \bot)$, and creates a set 
+	$\mathcal{R}$, which is composed of all user identifiers $U_i^j$. Next, $\FF$ checks 
+	whether $\mathcal{R} \subseteq \JJ$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, 
+	and notifies $U_i$ with the message $(\bot, h_i^j)$. Otherwise, $\FF$ updates $d_i^j$ as 
+	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, h_i^j)$, adds $d_i^j$ to $\LL$, and 
+	notifies $U_i$ with the message $(\top, h_i^j)$.
+\end{enumerate}
+}}
+\caption{Ideal functionality $\FF_{\mathsf{PCN}}$ in the 
+$(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model}
+\MESSAGEE{Does not consider the fees in value calculations.}
+\label{fig:pcn}
+\end{figure*}
 
 \begin{figure*}[!h]
 	\centering
