@@ -38,14 +38,14 @@ interfaces send$_\smt$ and receive$_\smt$ to exchange messages through the $\FF_
 functionality, and interfaces send$_\anon$ and receive$_\anon$ to exchange messages via 
 $\FF_{\anon}$.
 
-\paragraph{Ledger Functionality (Coins)}
+\paragraph{Ledger Functionality}
 We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
 The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
-store, read and update the balance of every user. It is defined in the global UC (GUC) model 
-\cite{guc}, since it provides data that should be globally accessible, and it can be updated 
-by multiple instances of our ideal functionality or by other protocols simultaneously. We 
-denote the number of entries in $\BB$ as $|\BB|$, and we model time as the number of entries 
-of the blockchain $\BB$ (i.e., time $t = |\BB|$).
+store, read and update the payment channels and balance of every user. It is defined in the 
+global UC (GUC) model \cite{guc}, since it provides data that should be globally accessible, 
+and it can be updated by multiple instances of our ideal functionality or by other protocols 
+simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
+number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
 
 \paragraph{Universal Composability}
 We now review the notion of secure realization in the UC framework~\cite{canetti}. 
@@ -66,9 +66,62 @@ indistinguishable.
 \subsection{Multi-Path Payment Channel Network (MPPCN)}
 \label{sec:mppcn}
 
+In this section we define an ideal functionality $\FF_{\mathsf{MPPCN}}$ for MPPCNs. 
+$\FF_{\mathsf{MPPCN}}$ works in interaction with a universe of users $\mathbb{U}$, which 
+corresponds to the users of the PCN. For simplicity, we only consider unidirectional channels, 
+however, we note that our functionality can be easily extended to support bidirectional 
+channels. $\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\BB}$, $\FF_{\anon}$ and $\FF_{\syn}$, 
+hence, it is defined in $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model. Furthermore, 
+$\FF_{\mathsf{MPPCN}}$ defines various data structures and operations explained below. 
+Our ideal functionality $\FF_{\mathsf{MPPCN}}$ can be seen in \cref{fig:ideal-mppcn}.
+
+\paragraph{Data Structures} 
+In order to simplify the presentation of our ideal functionality, we define the following 
+data structures, which are used internally by the ideal functionality:
+
+\begin{itemize}
+	\item Set $\CC$, which keeps track of all closed channels locally. The entries in $\CC$ 
+	are of the form $c_{\langle U,U' \rangle}$, which corresponds to the channel identifier.
+	\item List $\LL$, which records the off-chain payments locally. The entries in $\LL$ are 
+	defined as $(c_{\langle U,U' \rangle}, v, t, h)$, where $c_{\langle U,U' \rangle}$ is the 
+	corresponding channel identifier, $v$ is the amount of credit used, $t$ is the expiration 
+	time of the payment, and $h$ is the identifier for this entry.
+	\item List $\DD$, which records all off-chain transactions per multi-path payment. Since it 
+	is defined per payment each call to $\mathsf{pay}$ interface initialized a new empty list 
+	$\DD$. Each entry of $\DD$ is indexed by a user identifier $U$, and the entries have the 
+	same format as the entries of the list $\LL$. More precisely, $\DD[U]$ corresponds to all 
+	the transactions in the current multi-path payment where $U$ is the payer of the transaction. 
+	\item List $\HH$, which keeps track of off-chain payment identifiers. Similar to the list 
+	$\DD$, it is also defined per user and per multi-path payment. More precisely, $\HH[U]$ 
+	refers to all payment identifiers $h$ in the current multi-path payment, where $U$ is the 
+	payer of the payment.
+	\item List $\VV$, which keeps track of the amount of coins each user is supposed to receive 
+	during a multi-path payment. Same as $\DD$ and $\HH$ it is defined per user and per 
+	multi-path payment. The value $\VV[U]$ corresponds to the total amount of coins the user $U$ 
+	is supposed to receive after a successful execution of a multi-pay payment.
+	\item Set $\JJ$, which keeps track of the users who aborted during the execution of 
+	multi-path payment. It is also defined per multi-path payment, hence, the ideal functionality 
+	creates a new empty set $\JJ$ after every call to the $\mathsf{pay}$ interface.
+\end{itemize}
+	
+\paragraph{Operations}
+In \cref{fig:ideal-mppcn} we describe the interactions between $\FF_{\mathsf{MPPCN}}$ and the 
+users of the PCN. The execution starts with $\FF_{\mathsf{MPPCN}}$ initializing a local empty 
+set $\CC$, and empty list $\LL$. Users of the PCN can query $\FF_{\mathsf{MPPCN}}$ on $\open$ 
+interface to open new payment channels, and query on $\close$ interface to close them to any 
+valid state that is in $\LL$. The multi-path payment operation is initiated with a call to 
+$\mathsf{pay}$ interface by user $U_0$ (sender) on input a payment value $v$ and receiver 
+identifier $U_{n+1}$. Then, $\FF_{\mathsf{MPPCN}}$ checks whether all the channels on the paths 
+have enough capacity and whether the intermediaries allow the payment. If these conditions are 
+satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once the payment has 
+reached the receiver, each user can again decide to interrupt the flow of the payment or not 
+(step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes of the success of the 
+operation, and adds the updated channel states to $\LL$ (step 3).
+
 \begin{figure*}[!t]
 \centering
 \fbox{\parbox{\textwidth}{
+
 \textbf{Open Channel:} On input $(\open, c_{\langle U,U' \rangle}, v, U', t, f)$ from a user 
 $U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed	(i.e., contains valid 
 identifiers and it is not a duplicate), and replies with $(c_{\langle U,U' \rangle}, v, t, f)$ 
@@ -96,8 +149,9 @@ the following interactive protocol:
 	random $h_i^j$, and parses $\BB$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
 	v^*, t^*, f^*)$. If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
 	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ via an anonymous communication 
-	channel, adds $h_i^j$ to $\HH[U_i^j]$ and sets $\VV[U_i^j] = \VV[U_i^j] + v_i^j$. 
-	Next, $\FF$ checks whether for all entries of the form $(c_{\langle U_i,U_i^j \rangle}, 
+	channel, who replies either with $\top$ or $\bot$. In the latter case, $\FF$ aborts. 
+	Otherwise, $\FF$ adds $h_i^j$ to $\HH[U_i^j]$, sets $\VV[U_i^j] = \VV[U_i^j] + v_i^j$, 
+	and checks whether for all entries of the form $(c_{\langle U_i,U_i^j \rangle}, 
 	v^*, \cdot, \cdot) \in \LL$, it holds that $v^* \geq v_i^j$. If this is the case $\FF$ 
 	adds $d_i^j = (c_{\langle U_i,U_i^j \rangle},v^* - v_i^j, t_i^j, \bot)$ to $\DD[U_i]$. where 
 	$(c_{\langle U_i,U_i^j \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the lowest 
@@ -117,11 +171,12 @@ the following interactive protocol:
 	notifies $U_i$ with the message $(\top, h_i^j)$.
 \end{enumerate}
 }}
+
 \caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the 
 $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model}
 \MESSAGEE{Does not consider the fees in value calculations.}
 \TODOE{Update the ideal functionalities to take into account notifying the simulator.}
-\label{fig:pcn}
+\label{fig:ideal-mppcn}
 \end{figure*}
 
 \subsubsection{Discussion}
@@ -130,16 +185,29 @@ $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model}
 We introduce and discuss the security and privacy notions of interest for our 
 $\FF_{\mathsf{MPPCN}}$ functionality.
 
+\MESSAGEE{Which properties do we want our multi-path PCN to support?}
+
+\paragraph{Balance Security}
+
+\paragraph{Relationship Anonymity}
+
 \subsection{Multi-Path Multi-Hop Locks (MPMHL)}
 \label{sec:mpmhl}
 
-\paragraph{Our Model}
-In the following we define an ideal functionality $\FF_{\mathsf{MPMHL}}$ for {\sysname}s. For a 
-more modular treatment, we only model the cryptographic lock functionality.
+In the following we define an ideal functionality $\FF_{\mathsf{MPMHL}}$ for {\sysname}s, which 
+models the cryptographic lock functionality.
 
-\MESSAGEP{Do we consider unidirectional or bidirectional links?}
+Similar to $\FF_{\mathsf{MPPCN}}$, our ideal functionality $\FF_{\mathsf{MPMHL}}$ also works 
+in interaction with a universe of users $\mathbb{U}$.  Our $\FF_{\sysname}$ 
+ideal functionality can be seen in \cref{fig:ideal-func}.
 
-$\FF_{\mathsf{MPMHL}}$ works in interaction with a universe of users $\mathbb{U}$. Additionally, 
+$\FF_{\mathsf{MPMHL}}$ makes use of $\FF_{\anon}, \FF_{\smt}$ and $\FF_{\syn}$, thus, it is 
+defined in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model. The data structures and 
+operations that $\FF_{\mathsf{MPMHL}}$ defines are shown below. Our ideal functionality 
+$\FF_{\mathsf{MPMHL}}$ is found in \cref{fig:ideal-mpmhl}.
+
+
+ Additionally, 
 $\FF_{\mathsf{MPMHL}}$ initializes an empty list $\LL := \emptyset$, which is used to track the 
 locks. The entries of $\LL$ are of the form $(\lid_i, \td_i, U_i, U_j, f, \\ \lid_{i+1})$, 
 where $\lid_i$ is unique lock identifier, $\td_i$ is the trapdoor of the lock, $U_i$ and $U_j$ 
@@ -167,11 +235,7 @@ locks. The $\Extract$ interface allows the user $U_n$ (the receiver) to release 
 received using the initially created trapdoors. The $\Release$ interface allows an intermediate user 
 along the path to release the locks with its left neighbors assuming its right locks are released. 
 Lastly, $\mathsf{GetStatus}$ interface allows a user to check the current status of a lock. We note 
-that internally the locks are assigned identifiers that are unique across all paths. Our $\FF_{\sysname}$ 
-ideal functionality can be seen in \cref{fig:ideal-func}.
-
-$\FF_{\mathsf{MPMHL}}$ makes use of $\FF_{\anon}, \FF_{\smt}$ and $\FF_{\syn}$, thus, it is 
-defined in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.
+that internally the locks are assigned identifiers that are unique across all paths.
 
 \begin{figure*}[!h]
 	\centering
@@ -248,7 +312,7 @@ defined in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.
 	}
 	
 	\caption{Ideal functionality $\FF_{\mathsf{MPMHL}}$ in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.}
-	\label{fig:ideal-func}
+	\label{fig:idealmpmhl}
 \end{figure*}
 
 \subsubsection{Discussion}
