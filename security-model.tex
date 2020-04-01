@@ -68,7 +68,9 @@ indistinguishable.
 
 In this section we define an ideal functionality $\FF_{\mathsf{MPPCN}}$ for MPPCNs. 
 $\FF_{\mathsf{MPPCN}}$ works in interaction with a universe of users $\mathbb{U}$, which 
-corresponds to the users of the PCN. For simplicity, we only consider unidirectional channels, 
+corresponds to the users of the PCN. To ease the exposition, we assume that there is a 
+well-ordering to the users in a sense that a user $U_i$ can only transact with user $U_j$ 
+if $j > i$ for $i,j \in \NN$. For simplicity, we only consider unidirectional channels, 
 however, we note that our functionality can be easily extended to support bidirectional 
 channels. $\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\BB}$, $\FF_{\anon}$ and $\FF_{\syn}$, 
 hence, it is defined in $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model. Furthermore, 
@@ -112,11 +114,11 @@ interface to open new payment channels, and query on $\close$ interface to close
 valid state that is in $\LL$. The multi-path payment operation is initiated with a call to 
 $\mathsf{pay}$ interface by user $U_0$ (sender) on input a payment value $v$ and receiver 
 identifier $U_{n+1}$. Then, $\FF_{\mathsf{MPPCN}}$ checks whether all the channels on the paths 
-have enough capacity and whether the intermediaries allow the payment. If these conditions are 
+have enough capacity and whether the intermediaries allow the payments. If these conditions are 
 satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once the payment has 
 reached the receiver, each user can again decide to interrupt the flow of the payment or not 
-(step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes of the success of the 
-operation, and adds the updated channel states to $\LL$ (step 3).
+(step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes that the operation was 
+successful, and adds the updated channel states to $\LL$ (step 3).
 
 \begin{figure*}[!t]
 \centering
@@ -144,8 +146,8 @@ the following interactive protocol:
 \begin{enumerate}
 	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{get-}
 	\mathsf{split}, v_i)$ to $U_i$, who replies with $(\mathsf{split}, \{(U_i^1,v_i^1,t_i^1),
-	\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. If the set is empty or $\sum_{j=1}^{k_i} v_i^j 
-	\neq v_i$, then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
+	\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$ for $1 \leq k_i \leq n$. If the set is empty \textcolor{red}{or $\sum_{j=1}^{k_i} v_i^j 
+	\geq v_i$}, then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
 	random $h_i^j$, and parses $\BB$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
 	v^*, t^*, f^*)$. If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
 	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ via an anonymous communication 
@@ -176,6 +178,10 @@ the following interactive protocol:
 $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model}
 \MESSAGEE{Does not consider the fees in value calculations.}
 \TODOE{Update the ideal functionalities to take into account notifying the simulator.}
+\MESSAGEE{We have three options: we can give the whole path in $\mathsf{pay}$ interface, we 
+can only give the number of users (as in the current version), or we can avoid giving anything 
+non-trivial by just keeping a queue with the users to query next and iterating until the queue 
+is empty.}
 \label{fig:ideal-mppcn}
 \end{figure*}
 
@@ -185,11 +191,41 @@ $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model}
 We introduce and discuss the security and privacy notions of interest for our 
 $\FF_{\mathsf{MPPCN}}$ functionality.
 
-\MESSAGEE{Which properties do we want our multi-path PCN to support?}
-
 \paragraph{Balance Security}
+Balance security roughly means that an intermediary receives \emph{at least} as many coins as 
+it forwards, and that it can pull its coins as soon as \emph{at least} one of its right 
+neighbors has pulled. The first part of this property is achieved by our ideal functionality 
+in step 1 of $\mathsf{pay}$ interface, by making sure that the when a user splits, it cannot 
+split to a value more than it is supposed to receive (text in red). The second part is achieved 
+in step 3 of $\mathsf{pay}$ interface, which guarantees that the only way a payment will fail 
+for a user is if all of its right neighbors have aborted. Hence, the user has no one right 
+neighbor that pulled.
+
+\paragraph{Value Privacy}
+Value privacy means that the users who are not part of a payment do not learn the transacted 
+value. Our ideal functionality achieves this property as it does not contact any user who does 
+not lie in the payment path. 
+%Furthermore, assuming there has been at least one split in the payment path, and there are not colluding users on different paths, then learning the transacted value is not possible even for the intermediaries involved in the payment.
+\MESSAGEE{Is our value privacy per multi-path or we also define it per path? Since if there is 
+a split then no user in other path should learn the transacted value even per path.}
+
+\paragraph{Completeness}
+Completeness means that the receiver cannot start pulling the coins before it has received 
+enough transactions, whose sum amount equals the total coins he is supposed to receive by 
+the sender. Our ideal functionality keeps track of the amount of coins each user in the 
+multi-path payment will receive in the list $\VV$, and it performs a check in step 1 of 
+$\mathsf{pay}$ interface to make sure that the amount of coins the receiver will receive equals 
+the amount with which the sender invoked the $\mathsf{pay}$ interface. Hence, our ideal 
+functionality achieves this property as well.
 
 \paragraph{Relationship Anonymity}
+Relationship anonymity roughly means that any two simultaneous payments over the same path (or 
+multi-path) for the same value (and splitting in case of multi-path payment) are 
+indistinguishable to the eyes of the intermediaries as long as there exists \emph{at least} 
+one honest users in the path (or per path in case of multi-path payment). This is achieved by 
+our ideal functionality as every intermediate user only receives a unique identifier for 
+each payment, and such an identifier is independent from the identifiers of other users involved 
+in the same payment.
 
 \subsection{Multi-Path Multi-Hop Locks (MPMHL)}
 \label{sec:mpmhl}
