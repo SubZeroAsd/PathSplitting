@@ -201,11 +201,14 @@ in step 3 of $\mathsf{pay}$ interface, which guarantees that the only way a paym
 for a user is if all of its right neighbors have aborted. Hence, the user has no one right 
 neighbor that pulled.
 
+\MESSAGEE{Can we even realize "an intermediary receives at least as many coins as it forwards"?}
+
 \paragraph{Value Privacy}
 Value privacy means that the users who are not part of a payment do not learn the transacted 
 value. Our ideal functionality achieves this property as it does not contact any user who does 
 not lie in the payment path. 
 %Furthermore, assuming there has been at least one split in the payment path, and there are not colluding users on different paths, then learning the transacted value is not possible even for the intermediaries involved in the payment.
+
 \MESSAGEE{Is our value privacy per multi-path or we also define it per path? Since if there is 
 a split then no user in other path should learn the transacted value even per path.}
 
@@ -231,31 +234,44 @@ in the same payment.
 \label{sec:mpmhl}
 
 In the following we define an ideal functionality $\FF_{\mathsf{MPMHL}}$ for {\sysname}s, which 
-models the cryptographic lock functionality.
-
-Similar to $\FF_{\mathsf{MPPCN}}$, our ideal functionality $\FF_{\mathsf{MPMHL}}$ also works 
-in interaction with a universe of users $\mathbb{U}$.  Our $\FF_{\sysname}$ 
-ideal functionality can be seen in \cref{fig:ideal-func}.
-
+models the cryptographic lock functionality. Similar to $\FF_{\mathsf{MPPCN}}$, our ideal 
+functionality $\FF_{\mathsf{MPMHL}}$ also works in interaction with a universe of users 
+$\mathbb{U}$.  Our $\FF_{\sysname}$ ideal functionality can be seen in \cref{fig:ideal-func}.
 $\FF_{\mathsf{MPMHL}}$ makes use of $\FF_{\anon}, \FF_{\smt}$ and $\FF_{\syn}$, thus, it is 
 defined in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model. The data structures and 
 operations that $\FF_{\mathsf{MPMHL}}$ defines are shown below. Our ideal functionality 
 $\FF_{\mathsf{MPMHL}}$ is found in \cref{fig:ideal-mpmhl}.
 
+\paragraph{Data Structures}
+Our ideal functionality uses the following data structures internally:
 
- Additionally, 
-$\FF_{\mathsf{MPMHL}}$ initializes an empty list $\LL := \emptyset$, which is used to track the 
-locks. The entries of $\LL$ are of the form $(\lid_i, \td_i, U_i, U_j, f, \\ \lid_{i+1})$, 
-where $\lid_i$ is unique lock identifier, $\td_i$ is the trapdoor of the lock, $U_i$ and $U_j$ 
-are the users connected by the lock (the left and right user, respectively), $f \in \{\Init,\Lock,
-\Rel\}$ is a status flag of the lock, and $\lid_{i+1}$ is the identifier of the next lock on the 
-path. We note that the trapdoors are only associated to the initial locks created from the sender, 
-and in all subsequent locks on the path the trapdoor is set to $\bot$. However, since our list 
-$\LL$ has a linked structure (includes the next lock identifier), we can recursively traverse the 
-list of locks on the path to obtain the trapdoor associated to the path.
+\begin{itemize}
+	\item List $\LL$, which is initialized as empty list and is used to track the locks. 
+	The entries of $\LL$ are of the form $(\lid_i, \td_i, U_i, U_j, f, \\ \lid_{i+1})$, 
+	where $\lid_i$ is unique lock identifier, $\td_i$ is the trapdoor of the lock, $U_i$ 
+	and $U_j$ are the users connected by the lock (the left and right user, respectively), 
+	$f \in \{\Init,\Lock,\Rel\}$ is a status flag of the lock, and $\lid_{i+1}$ is the 
+	identifier of the next lock on the path. We note that the trapdoors are only associated 
+	to the initial locks created from the sender, and in all subsequent locks on the path the 
+	trapdoor is set to $\bot$. However, since our list $\LL$ has a linked structure (includes 
+	the next lock identifier), we can recursively traverse the list of locks on the path to 
+	obtain the trapdoor associated to the path.
+\end{itemize}
 
-For ease of exposition we define several functions that extract or update information of a 
-lock given its identifier as input: $\getStatus(\cdot)$ returns the status of the lock, 
+\paragraph{Operations}
+In \cref{fig:ideal-mpmhl} we define the ideal functionality $\FF_{\mathsf{MPMHL}}$ with its 5 
+interfaces. The $\Setup$ interface allows the user $U_0$ (the sender) to setup states and 
+trapdoors to be used later when establishing and releasing the locks. The $\Lock$ interface 
+allows a user to establish locks with its right neighbors using the previously established 
+locks. The $\Extract$ interface allows the user $U_n$ (the receiver) to release the locks that it 
+received using the initially created trapdoors. The $\Release$ interface allows an intermediate 
+user along the path to release the locks with its left neighbors assuming its right locks are 
+released. Lastly, $\mathsf{GetStatus}$ interface allows a user to check the current status of 
+a lock. We note that internally the locks are assigned identifiers that are unique across all 
+paths.
+
+For ease of exposition we also define several functions that extract or update information of 
+a lock given its identifier as input: $\getStatus(\cdot)$ returns the status of the lock, 
 $\getLeft(\cdot)$ and $\getRight(\cdot)$ return the left and right user involved with the 
 lock, $\getNextLock(\cdot)$ returns the identifier of the next lock, $\setRightUser(\cdot, U)$ 
 sets the right user of the lock to a user $U$, $\setRightLock(\cdot, \lid)$ sets the right lock 
@@ -263,15 +279,6 @@ of the lock to $\lid$, $\updateStatus(\cdot, f)$ sets the status of the lock to 
 $\generateTrapdoor(\cdot)$ creates a trapdoor associated to the lock, and $\validateTrapdoors
 ((\cdots), (\td_1,\ldots,\td_m))$ checks that the trapdoors are associated to the given locks 
 by recursively traversing the path of each given lock.
-
-$\FF_{\mathsf{MPMHL}}$ defines 5 interfaces. The $\Setup$ interface allows the user $U_0$ (the sender) 
-to setup states and trapdoors to be used later when establishing and releasing the locks. The $\Lock$ 
-interface allows a user to establish locks with its right neighbors using the previously established 
-locks. The $\Extract$ interface allows the user $U_n$ (the receiver) to release the locks that it 
-received using the initially created trapdoors. The $\Release$ interface allows an intermediate user 
-along the path to release the locks with its left neighbors assuming its right locks are released. 
-Lastly, $\mathsf{GetStatus}$ interface allows a user to check the current status of a lock. We note 
-that internally the locks are assigned identifiers that are unique across all paths.
 
 \begin{figure*}[!h]
 	\centering
@@ -348,7 +355,7 @@ that internally the locks are assigned identifiers that are unique across all pa
 	}
 	
 	\caption{Ideal functionality $\FF_{\mathsf{MPMHL}}$ in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.}
-	\label{fig:idealmpmhl}
+	\label{fig:ideal-mpmhl}
 \end{figure*}
 
 \subsubsection{Discussion}
@@ -363,30 +370,31 @@ are captured by the functionality $\FF_{\mathsf{MPMHL}}$.
 right lock being released first. Our ideal functionality captures this property as the $\Release$ 
 interface allows a user to release the left lock only if the corresponding right lock has already 
 been released. In case the user is the receiver, the $\Extract$ interface is used for releasing, 
-and it makes sure that there are no further right locks before starting the release of the provided 
-locks.
+and it makes sure that there are no further right locks before starting the release of the 
+provided locks.
 
-\MESSAGEE{But in our actual protocol we have a wormhole attack, so consistency should not quite hold?}
+\MESSAGEE{But in our actual protocol we have a wormhole attack, so consistency should not 
+quite hold. Need to get rid of this, and modify the ideal functionality accordingly.}
 
-\paragraph{Atomicity} Atomicity means that every user in any path is able to release its left lock 
-only if the corresponding right lock is already released, and furthermore, the receiver can only start extracting once it has received all the locks intended for him. Our ideal functionality enforces this by 
-keeping track of all the locks in the list $\LL$, and in the $\Release$ interface only changes the 
-status of a lock to $\Rel$ if the corresponding next lock is already released (i.e., has flag $\Rel$). 
-If the user is the receiver, then the $\Extract$ interface validates that no right lock exists, and that the number of locks received is equal to the number of trapdoors that the receiver has (i.e., the receiver has received all the locks intended for him). Only if these conditions are satisfied the release can start.
+\paragraph{Atomicity} Atomicity means that every user in any path is able to release its left 
+lock only if the corresponding right lock is already released. Our ideal functionality enforces 
+this by keeping track of all the locks in the list $\LL$, and in the $\Release$ interface only 
+changes the status of a lock to $\Rel$ if the corresponding next lock is already released (i.e., 
+has flag $\Rel$). If the user is the receiver, then the $\Extract$ interface validates that no 
+right lock exists.
 
-\MESSAGEE{Atomicity receiver: only if all subpaths get to him, and honest users don't lose money.}
-\paragraph{Anonymity} Anonymity requires that each intermediate user does not learn any information 
-about the set of users in a \sysname beyond its direct neighbors.
-%and furthermore, it cannot distinguish if it is part of a single-path or multi-path lock. 
-This is achieved by our ideal functionality since the lock identifiers are sampled at random, and 
-during the locking phase a user only learns the identifiers of its left and right locks, along with 
-its left and right neighbors.
+\paragraph{Completeness} A \sysname is complete if the receiver can only start releasing its 
+locks, once it has received same number of locks as the trapdoors (i.e., the receiver has 
+received all the locks intended for him). More precisely, our ideal functionality generates 
+$v$ trapdoors in the $\Setup$ interface, and in the $\Extract$ interface the release can only 
+begin if the receiver has $v$ locks as well.
+
+\paragraph{Relationship Anonymity} Relationship anonymity requires that each intermediate user 
+cannot distinguish two simultaneous multi-hop locks with the same sender and receiver. This is 
+achieved by our ideal functionality as the lock identifiers are sampled at random, and during 
+the locking phase a user only learns the identifiers of its left and right locks. Since the 
+identifiers are independent the property follows.
 
 \MESSAGEE{In our protocols we only achieve relationship anonymity as long as one intermediary is 
 honest. And what about anonymity in the sense that a user cannot distinguish if it is part of a 
-single-path or multi-path lock.}
-
-\paragraph{Completeness} A \sysname is complete if the receiver can only start releasing its locks,
-once it has received same number of locks as the trapdoors. More precisely, our ideal functionality 
-generates $v$ trapdoors in the $\Setup$ interface, and in the $\Extract$ interface the release can 
-only begin if the receiver has $v$ locks as well.
+single-path or multi-path lock?}
