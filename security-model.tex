@@ -83,7 +83,11 @@ Our ideal functionality $\FF_{\mathsf{MPPCN}}$ can be seen in \cref{fig:ideal-mp
 
 \paragraph{Data Structures} 
 In order to simplify the presentation of our ideal functionality, we define the following 
-data structures, which are used internally by the ideal functionality:
+data structures, which are used internally by the ideal functionality. 
+
+\MESSAGEP{It would be good to separate between "global data structures" (i.e., shared for all operations of F), and data structures only for one multi-hop payment}
+
+\NEWP{Global data structures}
 
 \begin{itemize}
 	\item Set $\CC$, which keeps track of all closed channels locally. The entries in $\CC$ 
@@ -92,6 +96,10 @@ data structures, which are used internally by the ideal functionality:
 	defined as $(c_{\langle U,U' \rangle}, v, t, h)$, where $c_{\langle U,U' \rangle}$ is the 
 	corresponding channel identifier, $v$ is the amount of credit used, $t$ is the expiration 
 	time of the payment, and $h$ is the identifier for this entry.
+\end{itemize}
+
+\NEWP{Multi-hop payment data structures} 
+\begin{itemize}
 	\item List $\DD$, which records all off-chain transactions per multi-path payment. Since it 
 	is defined per payment each call to $\mathsf{pay}$ interface initialized a new empty list 
 	$\DD$. Each entry of $\DD$ is indexed by a user identifier $U$, and the entries have the 
@@ -101,6 +109,7 @@ data structures, which are used internally by the ideal functionality:
 	$\DD$, it is also defined per user and per multi-path payment. More precisely, $\HH[U]$ 
 	refers to all payment identifiers $h$ in the current multi-path payment, where $U$ is the 
 	payer of the payment.
+	\MESSAGEP{Here is not clear the difference between $\DD$ and $\HH$. Both are storing all the transaction/payments done by each user U??}
 	\item List $\VV$, which keeps track of the amount of coins each user is supposed to receive 
 	during a multi-path payment. Same as $\DD$ and $\HH$ it is defined per user and per 
 	multi-path payment. The value $\VV[U]$ corresponds to the total amount of coins the user $U$ 
@@ -123,6 +132,7 @@ satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once
 reached the receiver, each user can again decide to interrupt the flow of the payment or not 
 (step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes that the operation was 
 successful, and adds the updated channel states to $\LL$ (step 3).
+\MESSAGEP{This needs to be extended when IF clarified}
 
 \begin{figure*}[!t]
 \centering
@@ -144,30 +154,32 @@ Otherwise, $\FF$ adds the entry $(c_{\langle U,U' \rangle}, v', t')$ to $\BB$ an
 $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends $(c_{\langle U,U' \rangle}, \bot, h)$ 
 to $U, U'$ and $\sdv$. \\
 
+\MESSAGEP{We might want to omit open channel and close channel. Instead rely on one UC for payment channels and use their open-channel, close-channel and update functions throughout this ideal functionality.}
+
 \textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_{n+1})$ from a user $U_0$, $\FF$ 
 initializes the set $\JJ$ and lists $\DD, \HH, \VV$ as empty, sets $\VV[U_0] = v$, and executes 
 the following interactive protocol:
 
 \begin{enumerate}
-	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
-	\mathsf{req}, \sid, v_i)$ to $U_i$ and $\sdv$, where $U_i$ replies with $(\mathsf{split}, 
+	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$ \MESSAGEP{Isn't $\VV[U_i] = 0$ at the beginning? }, sends $(\mathsf{split-}
+	\mathsf{req}, \sid, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?}, where $U_i$ replies with $(\mathsf{split}, 
 	\sid, \{(U_i^1,v_i^1,t_i^1),\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$ for $1 \leq k_i 
 	\leq n$. If the set is empty \textcolor{red}{or $\sum_{j=1}^{k_i} v_i^j \geq v_i$}, 
 	then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
 	random $h_i^j$, and parses $\BB$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
-	v^*, t^*, f^*)$. If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
+	v^*, t^*, f^*)$.  If such an entry exists, \MESSAGEP{Don't you need to check that the channel has enough balance?} then $\FF$ sends the tuple $(h_i^j, c_{\langle 
 	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ via an anonymous communication 
-	channel and notifies $\sdv$, where $U_i^j$ replies either with $\top$ or $\bot$. In the 
+	channel \MESSAGEP{Why the ACN here?} and notifies $\sdv$, where $U_i^j$ replies either with $\top$ or $\bot$. In the 
 	latter case, $\FF$ aborts. Otherwise, $\FF$ adds $h_i^j$ to $\HH[U_i^j]$, sets $\VV[U_i^j] 
 	= \VV[U_i^j] + v_i^j$, and checks whether for all entries of the form $(c_{\langle U_i,U_i^j 
 	\rangle}, v^*, \cdot, \cdot) \in \LL$, it holds that $v^* \geq v_i^j$. If this is the case 
 	$\FF$ adds $d_i^j = (c_{\langle U_i,U_i^j \rangle},v^* - v_i^j, t_i^j, \bot)$ to $\DD[U_i]$, 
 	where $(c_{\langle U_i,U_i^j \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the 
-	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
+	lowest $v^*$ \MESSAGEP{Why lowest $v^*$??}. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
 	then $\FF$ aborts.
 	
 	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ sends $U_i$ with $\HH[U_i]$ through an 
-	anonymous communication channel, and notifies $\sdv$. Each user can reply either with 
+	anonymous communication channel \MESSAGEP{why ACN here?}, and notifies $\sdv$. Each user can reply either with 
 	$\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
 	
 	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
@@ -179,6 +191,10 @@ the following interactive protocol:
 	sends $(\top, h_i^j)$ to $U_i$ and $\sdv$.
 \end{enumerate}
 }}
+
+\TODOP{I didn't fully get all the details. Revisit}
+
+\MESSAGEP{We wanted to \emph{merge} PCN and Lock functionalities, right?} 
 
 \caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the 
 $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model}
@@ -202,7 +218,7 @@ Balance security roughly means that an intermediary receives \emph{at least} as 
 it forwards, and that it can pull its coins as soon as \emph{at least} one of its right 
 neighbors has pulled. The first part of this property is achieved by our ideal functionality 
 in step 1 of $\mathsf{pay}$ interface, by making sure that the when a user splits, it cannot 
-split to a value more than it is supposed to receive (text in red). The second part is achieved 
+split to a value more than it is supposed to receive (text in red). \MESSAGEP{We can abstract this part by forcing it in the environment if clearer} The second part is achieved 
 in step 3 of $\mathsf{pay}$ interface, which guarantees that the only way a payment will fail 
 for a user is if all of its right neighbors have aborted. Hence, the user has no one right 
 neighbor that pulled.
@@ -218,6 +234,8 @@ not lie in the payment path.
 \MESSAGEE{Is our value privacy per multi-path or we also define it per path? Since if there is 
 a split then no user in other path should learn the transacted value even per path.}
 
+\MESSAGEP{Ideally, we should recall the definitions that we had for credit networks and adjust them for PCN. Source here: \url{https://www.ndss-symposium.org/wp-content/uploads/2017/09/04_3_2.pdf}}
+
 \paragraph{Completeness}
 Completeness means that the receiver cannot start pulling the coins before it has received 
 enough transactions, whose sum amount equals the total coins he is supposed to receive by 
@@ -231,7 +249,9 @@ functionality achieves this property as well.
 Relationship anonymity roughly means that any two simultaneous payments over the same path (or 
 multi-path) for the same value (and splitting in case of multi-path payment) are 
 indistinguishable to the eyes of the intermediaries as long as there exists \emph{at least} 
-one honest users in the path (or per path in case of multi-path payment). This is achieved by 
+one honest users in the path (or per path in case of multi-path payment). 
+\MESSAGEP{As before with value privacy, it would be good to refer to that definition of credit networks and also the one in PCN (CCS'17)}
+This is achieved by 
 our ideal functionality as every intermediate user only receives a unique identifier for 
 each payment, and such an identifier is independent from the identifiers of other users involved 
 in the same payment.
