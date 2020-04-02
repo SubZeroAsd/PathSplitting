@@ -11,7 +11,7 @@ framework of Canetti \cite{canetti}.
 \paragraph{Attacker Model}
 We model parties as interactive Turing machines (ITMs), which communicate with a trusted 
 functionality $\FF$ via secure and authenticated communication channels. We model the 
-adversary $\adv$ as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
+adversary $\adv$ \MESSAGEP{Here, the adversary/simulator is called $\adv$ and in Figure 1 is called $\sdv$. Pick one for consistency} as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
 which takes as input a party identifier $P$ and provides the attacker with the internal 
 state of $P$. From that point onward, all subsequent incoming and outgoing communication 
 of $P$ is routed through $\adv$. We consider the static corruption model, that is, the 
@@ -25,13 +25,14 @@ any two parties happens, and allows the adversary to delay the delivery of the m
 arbitrarily. However, the adversary can neither read nor change the content of the messages.
 
 We consider a synchronous communication network, where communication proceeds in discrete 
-rounds, as defined in \cite{kmtz} and denoted here as $\FF_{\syn}$. The parties are 
+rounds, as defined in \cite{kmtz} and denoted here as $\FF_{\syn}$ \MESSAGEP{We might want to use $\FF_{\textit{GDC}}$ instead from \url{https://eprint.iacr.org/2019/571.pdf}. The difference is: "In contrast to [19]($\FF_{\syn}$), we treat the clock functionality  as  a global ideal  functionality  using  the global  UC  (GUC) model"}. The parties are 
 always aware of the current round, and if a party $P$ sends a message in round $r$, 
 the recipient receives the message in the beginning of round $r + 1$. The 
 adversary can change the order of messages, but we assume that the order of messages 
 between honest parties cannot be changed (which can easily be realized using message 
 counters). For simplicity, we assume that computation is instantaneous.
 
+\MESSAGEP{Do we really need $\FF_{\anon}$?}
 Furthermore, we assume existence of an anonymous communication channel as defined in 
 \cite{cl}, which we denote here as $\FF_{\anon}$. In the ideal functionality we use the 
 interfaces send$_\smt$ and receive$_\smt$ to exchange messages through the $\FF_{\smt}$ 
@@ -41,15 +42,18 @@ $\FF_{\anon}$.
 \paragraph{Ledger Functionality}
 We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
 The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
-store, read and update the payment channels and balance of every user. It is defined in the 
+store, read and update the payment channels and balance of every user.\MESSAGEP{I am not sure about this. $\FF_{\BB}$ is only about managing the coins at the blockchain, no?} It is defined in the 
 global UC (GUC) model \cite{guc}, since it provides data that should be globally accessible, 
 and it can be updated by multiple instances of our ideal functionality or by other protocols 
 simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
 number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
+\MESSAGEP{Before, it is mentioned that time was modeled as global clock and now as $|\BB|$?}
+
+\MESSAGEP{We might want to add the API for each of these ideal functionalities and use it in Figure 1.}
 
 \paragraph{Universal Composability}
 We now review the notion of secure realization in the UC framework~\cite{canetti}. 
-Intuitively, a protocol realizes an ideal functionality if the adversary has no way 
+Intuitively, a protocol realizes an ideal functionality if the \REPLACEP{adversary}{environment?} has no way 
 to distinguish between the ideal functionality and the real-world protocol, where 
 a simulator is in charge of translating the messages produced by the ideal functionality 
 for the computational adversary. Here $\exec_{\pi, \adv, \dist}$ denotes the ensemble of 
