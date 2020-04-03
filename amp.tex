@@ -20,3 +20,6 @@ to be opened by the receiver. {\bf Pedro: It is really important
 that here only the receiver gets the tuple $(\textit{ID}, n, s_i)$}
 \end{itemize}
 
+
+ In AMP, layered encryption can be only created if the sender knows the nodes in the paths from the sender to the receiver. One could imagine a little modification to overcome this in the \emph{non-source} routing setting. In particular, the sender creates an encryption $c_i := \textsf{Enc}_{\textsf{pk}_{\textit{receiver}}}(\textit{ID}, n, s_i)$. Then, the sender sends it along the payment value $v_i$ and the hash value $h_i$ to each path. \textbf{I think this is what Giulio meant as little modification.}
+ 
