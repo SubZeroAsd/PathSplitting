@@ -23,3 +23,18 @@ that here only the receiver gets the tuple $(\textit{ID}, n, s_i)$}
 
  In AMP, layered encryption can be only created if the sender knows the nodes in the paths from the sender to the receiver. One could imagine a little modification to overcome this in the \emph{non-source} routing setting. In particular, the sender creates an encryption $c_i := \textsf{Enc}_{\textsf{pk}_{\textit{receiver}}}(\textit{ID}, n, s_i)$. Then, the sender sends it along the payment value $v_i$ and the hash value $h_i$ to each path. \textbf{I think this is what Giulio meant as little modification.}
  
+\subsection{Protocol with accountability}
+
+Attacker model: sender and receiver are rational but they do not trust each other (\textbf{and actively try to falsely accuse each other if possible?})
+
+Intuition: If the sender has to pay the coins and the receiver claims that it did not receive it, then the sender can prove that the recipient has colluded with some intermediary \textbf{if and only if} the recipient has actually colluded with some intermediary.
+
+ 
+
+
+This ``notion'' of accountability is not strictly achieved by the protocol above (i.e., the one using ciphertexts to send the shares, nor the AMP). The reason is that the sender is the one creating the shares and could reveal them  to the intermediaries to falsely accuse the receiver. 
+
+\textbf{Is the aforementioned issue something that we need to worry about?}
+If so, one thought that could help to mitigate this is that shares are not created only by sender or receiver, but together in a setup between the two of them before the payment. \textbf{Is this interesting? shall we work out the details?} 
+
+
