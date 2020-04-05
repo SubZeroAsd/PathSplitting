@@ -171,7 +171,7 @@ the following interactive protocol:
 
 \begin{enumerate}
 	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$ \MESSAGEP{Isn't $\VV[U_i] = 0$ at the beginning?}\MESSAGEE{We start with $U_0$ initially, and in the line above I am setting $\VV[U_0] = v$, so it is not 0 for $U_0$, and for the other users, it gets increases throughout the execution of the loop.}, sends $(\mathsf{split-}
-	\mathsf{req}, \sid, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?}\MESSAGEE{I believe $\sdv$ knows that, right? I mean I have not seen papers sending the identifier of the user to the simulator. They just forward the message that the user will receive also to the simulator. So, I believe you can assume that $\FF$ internally also informs $\sdv$ to which user the message was sent. I don't think we need to be explicit there. For example, this is what is done here \url{https://eprint.iacr.org/2019/1063.pdf} (page 11, Figure 3).}, where $U_i$ replies with $(\mathsf{split}, 
+	\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?}\MESSAGEE{I believe $\sdv$ knows that, right? I mean I have not seen papers sending the identifier of the user to the simulator. They just forward the message that the user will receive also to the simulator. So, I believe you can assume that $\FF$ internally also informs $\sdv$ to which user the message was sent. I don't think we need to be explicit there. For example, this is what is done here \url{https://eprint.iacr.org/2019/1063.pdf} (page 11, Figure 3).}, where $U_i$ replies with $(\mathsf{split}, 
 	\sid, \{(U_i^1,v_i^1,t_i^1),\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$ for $1 \leq k_i 
 	\leq n$. If the set is empty, 
 	then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
@@ -255,7 +255,7 @@ multi-path) for the same value (and splitting in case of multi-path payment) are
 indistinguishable to the eyes of the intermediaries as long as there exists \emph{at least} 
 one honest users in the path (or per path in case of multi-path payment). 
 \MESSAGEP{As before with value privacy, it would be good to refer to that definition of credit networks and also the one in PCN (CCS'17)}
-\MESSAGEE{The definition I gave here is a modification of your CCS'17 definition. However, I got rid of the mathematical symbols that you have in your CCS'17 definition, to keep things more high level, and maybe that made it a bit vague. As for your credit network paper you have linked above, I do not see any definition of relationship anonymity there.}
+\MESSAGEE{The definition I gave here is a modification of your CCS'17 definition. However, I got rid of the mathematical symbols that you have in your CCS'17 definition, to keep things more high level, and maybe it made it a bit vague. As for your credit network paper you have linked above, I do not see any definition of relationship anonymity there.}
 This is achieved by 
 our ideal functionality as every intermediate user only receives a unique identifier for 
 each payment, and such an identifier is independent from the identifiers of other users involved 
