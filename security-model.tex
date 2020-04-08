@@ -11,10 +11,10 @@ framework of Canetti \cite{canetti}.
 \paragraph{Attacker Model}
 We model parties as interactive Turing machines (ITMs), which communicate with a trusted 
 functionality $\FF$ via secure and authenticated communication channels. We model the 
-adversary $\adv$ \MESSAGEP{Here, the adversary/simulator is called $\adv$ and in Figure 1 is called $\sdv$. Pick one for consistency} \MESSAGEE{The adversary mentioned here is the real adversary. One gives the $\corrupt$ interface to the real adversary in simulation-based proofs. Afterwards, once the adversary picks user identifier to corrupt, then in the ideal world it is the simulator's job to corrupt the party. Please check Figure 3 on page 11 and last paragraph on page 12 of \url{https://eprint.iacr.org/2019/1063.pdf}} as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
+adversary $\sdv$ as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
 which takes as input a party identifier $P$ and provides the attacker with the internal 
 state of $P$. From that point onward, all subsequent incoming and outgoing communication 
-of $P$ is routed through $\adv$. We consider the static corruption model, that is, the 
+of $P$ is routed through $\sdv$. We consider the static corruption model, that is, the 
 adversary is required to commit to the identifiers of the parties it wishes to corrupt 
 ahead of time.
 
@@ -32,27 +32,23 @@ adversary can change the order of messages, but we assume that the order of mess
 between honest parties cannot be changed (which can easily be realized using message 
 counters). For simplicity, we assume that computation is instantaneous.
 
-\MESSAGEP{Do we really need $\FF_{\anon}$?}
-\MESSAGEE{I think you use anonymous communication channel in your constructions in the CCS paper when senders sends data to the intermediaries and the receiver. Since the sender knows and prepares the whole path, you need to use it there to achieve any meaningful anonymity at all. However, in our case the sender does not know the whole path, so only talks with the receiver and its direct neighbors. Therefore, we may not need to use anonymous communication channel. But, we need to further discuss this to clarify what form of anonymity we are aiming for and achieving and whether we need anonymous communication channels to realize them.}
-Furthermore, we assume existence of an anonymous communication channel as defined in 
-\cite{cl}, which we denote here as $\FF_{\anon}$. In the ideal functionality we use the 
-interfaces send$_\smt$ and receive$_\smt$ to exchange messages through the $\FF_{\smt}$ 
-functionality, and interfaces send$_\anon$ and receive$_\anon$ to exchange messages via 
-$\FF_{\anon}$.
+\TODOE{Figure out whether we actually need $\FF_{\anon}$ or not (currently we do not use it).}
+%\MESSAGEP{Do we really need $\FF_{\anon}$?}
+%\MESSAGEE{I think you use anonymous communication channel in your constructions in the CCS paper when senders sends data to the intermediaries and the receiver. Since the sender knows and prepares the whole path, you need to use it there to achieve any meaningful anonymity at all. However, in our case the sender does not know the whole path, so only talks with the receiver and its direct neighbors. Therefore, we may not need to use anonymous communication channel. But, we need to further discuss this to clarify what form of anonymity we are aiming for and achieving and whether we need anonymous communication channels to realize them.}
+%Furthermore, we assume existence of an anonymous communication channel as defined in 
+%\cite{cl}, which we denote here as $\FF_{\anon}$. In the ideal functionality we use the 
+%interfaces send$_\smt$ and receive$_\smt$ to exchange messages through the $\FF_{\smt}$ 
+%functionality, and interfaces send$_\anon$ and receive$_\anon$ to exchange messages via 
+%$\FF_{\anon}$.
 
 \paragraph{Ledger Functionality}
 We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
 The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
-store, read and update the \REMOVEE{payment channels and} balance of every user.\MESSAGEP{I am not sure about this. $\FF_{\BB}$ is only about managing the coins at the blockchain, no?} \MESSAGEE{You are right, I removed the payment channel part".} It is defined in the 
+store, read and update the balance of every user. It is defined in the 
 global UC (GUC) model \cite{guc}, since it provides data that should be globally accessible, 
 and it can be updated by multiple instances of our ideal functionality or by other protocols 
 simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
 number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
-\MESSAGEP{Before, it is mentioned that time was modeled as global clock and now as $|\BB|$?}
-\MESSAGEE{I though this is the first point where I define time. May I ask you about which time you are talking? But, I agree that like our above discussion, we need to decide whether we go with time from synchronous communication functionality as you pointed out, or we stick to using time from a blockchain functionality?}
-
-
-\MESSAGEP{We might want to add the API for each of these ideal functionalities and use it in Figure 1.} \MESSAGEE{Agreed. I will leave here a TODO to explicitly make calls to the hybrid ideal functionalities that we make use of once we decide on the final version of the ideal functionality.}
 
 \TODOE{Add interfaces for hybrid ideal functionalities and call these interfaces in our own ideal functionalities.}
 
@@ -81,7 +77,7 @@ corresponds to the users of the PCN. To ease the exposition, we assume that ther
 well-known ordering of the users in a sense that a user $U_i$ can only transact with user $U_j$ 
 if $j > i$ for $i,j \in \NN$. For simplicity, we only consider unidirectional channels, 
 however, we note that our functionality can be easily extended to support bidirectional 
-channels. \MESSAGEP{We might want to do an intuitive argument of how to extend it or avoid this point.} $\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\BB}$, $\FF_{\anon}$ and $\FF_{\syn}$, 
+channels. \MESSAGEP{We might want to do an intuitive argument of how to extend it or avoid this point.}\MESSAGEE{If we make use of an ideal functionality that implements bi-directional payment channel networks, then this becomes trivial, as we just use the interfaces of that ideal functionality for updates in both directions.} $\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\BB}$, $\FF_{\anon}$ and $\FF_{\syn}$, 
 hence, it is defined in $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model. Furthermore, 
 $\FF_{\mathsf{MPPCN}}$ defines various data structures and operations explained below. 
 Our ideal functionality $\FF_{\mathsf{MPPCN}}$ can be seen in \cref{fig:ideal-mppcn}.
@@ -117,7 +113,6 @@ the payment operation. Our data structures are defined as follows:
 		store the whole transaction data, and just stores the identifiers. More precisely, 
 		$\HH[U]$ refers to all payment identifiers $h$ in the current multi-path payment, where 
 		$U$ is the payer of the payment.
-	\MESSAGEP{Here is not clear the difference between $\DD$ and $\HH$. Both are storing all the transaction/payments done by each user U??} \MESSAGEE{I tried to clarify it now. The relation is that list $\LL$ holds the whole transaction data of completed transactions, and is defined globally, whereas list $\DD$ stores all transaction data excluding the identifier of the transaction (so in a sense stores "incomplete" transactions which should not be added to list $\LL$ yet), and list $\HH$ merely stores the identifiers $h$ of the transactions and nothing else. So, in a sense if we join the identifiers stored in $\HH$ with the incomplete transaction data from $\DD$, then we will have a complete transaction, which we can add to the list $\LL$.}
 		\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
 		receive during a multi-path payment. Similar to lists $\DD$ and $\HH$ it is indexed 
 		by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
@@ -140,55 +135,54 @@ satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once
 reached the receiver, each user can again decide to interrupt the flow of the payment or not 
 (step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes that the operation was 
 successful, and adds the updated channel states to $\LL$ (step 3).
-\MESSAGEP{This needs to be extended when IF clarified} \MESSAGEE{I will try to extend this once we settle on the final version of the ideal functionality.}
+
+\TODOE{Extend this part once we settle on the final version of the ideal functionality.}
 
 \begin{figure*}[!t]
 \centering
 \fbox{\parbox{\textwidth}{
+\TODOE{Add the fees to value calculations.}
 
-\textbf{Open Channel:} On input $(\open, \sid, c_{\langle U,U' \rangle}, v, U', t, f)$ from a 
-user $U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed	 (i.e., contains valid 
-identifiers and it is not a duplicate), and sends $(c_{\langle U,U' \rangle}, v, t, f)$ 
-to $U'$ and $\sdv$, where $U'$ can either abort or authorize the operation. In the latter case, 
-$\FF$ appends the tuple $(c_{\langle U,U' \rangle}, v, t, f)$ to $\BB$ via $\FF_{\BB}$ and 
-$(c_{\langle U,U' \rangle}, v, t, h)$ to $\LL$, for some random $h$. Finally, $\FF$ sends $h$ 
-to $U, U'$ and $\sdv$. \\
-
-\textbf{Close Channel:} On input $(\close, \sid, c_{\langle U,U' \rangle}, h)$ from a user $U$ 
-or $U'$, the ideal functionality $\FF$ parses $\BB$ via $\FF_{\BB}$ for an entry 
-$(c_{\langle U,U' \rangle}, v, t, f)$ and $\LL$ for an entry $(c_{\langle U,U' \rangle}, v', t', 
-h)$ for $h \neq \bot$. If $c_{\langle U,U' \rangle} \in \CC$ or $t' > |\BB|$ or $t' > |\BB|$, 
-then $\FF$ aborts. Otherwise, $\FF$ adds the entry $(c_{\langle U,U' \rangle}, v', t')$ to 
-$\BB$ via $\FF_{\BB}$ and adds $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends 
-$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
-
-\MESSAGEP{We might want to omit open channel and close channel. Instead rely on one UC for payment channels and use their open-channel, close-channel and update functions throughout this ideal functionality.}
-\MESSAGEE{Sure, we can do that also. I included them here for the sake of completeness. Then, our ideal functionality will only include a $\mathsf{pay}$ interface, and in the security proof we won't need to simulate the open/close operations. But, then I don't think that we need to call the open/close operations from your CCS paper anywhere, right? Because in payment operation we are not opening or closing any channel, we are just using the channels that are already opened.}
+%\textbf{Open Channel:} On input $(\open, \sid, c_{\langle U,U' \rangle}, v, U', t, f)$ from a 
+%user $U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed	 (i.e., contains valid 
+%identifiers and it is not a duplicate), and sends $(c_{\langle U,U' \rangle}, v, t, f)$ 
+%to $U'$ and $\sdv$, where $U'$ can either abort or authorize the operation. In the latter case, 
+%$\FF$ appends the tuple $(c_{\langle U,U' \rangle}, v, t, f)$ to $\BB$ via $\FF_{\BB}$ and 
+%$(c_{\langle U,U' \rangle}, v, t, h)$ to $\LL$, for some random $h$. Finally, $\FF$ sends $h$ 
+%to $U, U'$ and $\sdv$. \\
+%
+%\textbf{Close Channel:} On input $(\close, \sid, c_{\langle U,U' \rangle}, h)$ from a user $U$ 
+%or $U'$, the ideal functionality $\FF$ parses $\BB$ via $\FF_{\BB}$ for an entry 
+%$(c_{\langle U,U' \rangle}, v, t, f)$ and $\LL$ for an entry $(c_{\langle U,U' \rangle}, v', t', 
+%h)$ for $h \neq \bot$. If $c_{\langle U,U' \rangle} \in \CC$ or $t' > |\BB|$ or $t' > |\BB|$, 
+%then $\FF$ aborts. Otherwise, $\FF$ adds the entry $(c_{\langle U,U' \rangle}, v', t')$ to 
+%$\BB$ via $\FF_{\BB}$ and adds $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends 
+%$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
 
 \textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_{n+1})$ from a user $U_0$, $\FF$ 
 initializes the set $\JJ$ and lists $\DD, \HH, \VV$ as empty, sets $\VV[U_0] = v$, and executes 
 the following interactive protocol:
 
 \begin{enumerate}
-	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$ \MESSAGEP{Isn't $\VV[U_i] = 0$ at the beginning?}\MESSAGEE{We start with $U_0$ initially, and in the line above I am setting $\VV[U_0] = v$, so it is not 0 for $U_0$, and for the other users, it gets increases throughout the execution of the loop.}, sends $(\mathsf{split-}
-	\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?}\MESSAGEE{I believe $\sdv$ knows that, right? I mean I have not seen papers sending the identifier of the user to the simulator. They just forward the message that the user will receive also to the simulator. So, I believe you can assume that $\FF$ internally also informs $\sdv$ to which user the message was sent. I don't think we need to be explicit there. For example, this is what is done here \url{https://eprint.iacr.org/2019/1063.pdf} (page 11, Figure 3).}, where $U_i$ replies with $(\mathsf{split}, 
+	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
+	\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?} \TODOE{Ask Daniel about this.}, where $U_i$ replies with $(\mathsf{split}, 
 	\sid, \{(U_i^1,v_i^1,t_i^1),\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$ for $1 \leq k_i 
 	\leq n$. If the set is empty, 
 	then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
 	random $h_i^j$, and parses $\BB$ via $\FF_{\BB}$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
-	v^*, t^*, f^*)$.  If such an entry exists, \MESSAGEP{Don't you need to check that the channel has enough balance?}\MESSAGEE{I do check it, but towards the end of the step 1. Here I just check if a channel between the two users exists. I followed this approach since this is what you also had done in your CCS paper. But, sure we can also move balance check here before contacting the user.} then $\FF$ sends the tuple $(h_i^j, c_{\langle 
+	v^*, t^*, f^*)$.  If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
 	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ \REMOVEE{via an anonymous communication 
-	channel} \MESSAGEP{Why the ACN here?}\MESSAGEE{I think we may not need ACN here, as essentially every user is locking with its next neighbor, so we do not have here sender giving whole path. In your constructions sender prepares some data for every intermediary and receiver, so in actual protocol realization you need to do this via anonymous communication channel to have any anonymity. But I guess in our case we can get rid of it here.} and notifies $\sdv$, where $U_i^j$ replies either with $\top$ or $\bot$. In the 
+	channel} and notifies $\sdv$, where $U_i^j$ replies either with $\top$ or $\bot$. In the 
 	latter case, $\FF$ aborts. Otherwise, $\FF$ adds $h_i^j$ to $\HH[U_i^j]$, sets $\VV[U_i^j] 
 	= \VV[U_i^j] + v_i^j$, and checks whether for all entries of the form $(c_{\langle U_i,U_i^j 
 	\rangle}, v^*, \cdot, \cdot) \in \LL$, it holds that $v^* \geq v_i^j$. If this is the case 
 	$\FF$ adds $d_i^j = (c_{\langle U_i,U_i^j \rangle},v^* - v_i^j, t_i^j, \bot)$ to $\DD[U_i]$, 
 	where $(c_{\langle U_i,U_i^j \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the 
-	lowest $v^*$ \MESSAGEP{Why lowest $v^*$??}\MESSAGEE{Because list $\LL$ stores all the transactions that have successfully completed, hence, the one with the lowest value is the latest state of the channel. Note that we consider only unidirectional channels here}. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
+	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
 	then $\FF$ aborts.
 	
 	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ sends $U_i$ with $\HH[U_i]$ \REMOVEE{through an 
-	anonymous communication channel} \MESSAGEP{why ACN here?}\MESSAGEE{Same argument as above.}, and notifies $\sdv$. Each user can reply either with 
+	anonymous communication channel}, and notifies $\sdv$. Each user can reply either with 
 	$\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
 	
 	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
@@ -203,12 +197,11 @@ the following interactive protocol:
 
 \TODOP{I didn't fully get all the details. Revisit}
 
-\MESSAGEP{We wanted to \emph{merge} PCN and Lock functionalities, right?} 
-\MESSAGEE{I thought we are again going for two ideal functionalities as in our A2L, no?}
+\MESSAGEP{We wanted to \emph{merge} PCN and Lock functionalities, right?}
+\MESSAGEE{If we include lock interfaces here, it means that a way to realize a PCN is through a protocol that realized the lock ideal functionality. We can either keep it more generic (like it is now) I guess.}
 
 \caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the $(\FF_{\BB}, \FF_{\anon}, 
 \FF_{\syn})$-hybrid model}
-\MESSAGEE{The ideal functionality does not consider the fees in value calculations (yet).}
 \label{fig:ideal-mppcn}
 \end{figure*}
 
@@ -221,16 +214,12 @@ $\FF_{\mathsf{MPPCN}}$ functionality.
 \paragraph{Balance Security}
 Balance security roughly means that an intermediary receives \emph{at least} as many coins as 
 it forwards, and that it can pull its coins as soon as \emph{at least} one of its right 
-neighbors has pulled. \NEWE{We assume that the first part of this property is enforced by the 
+neighbors has pulled. We assume that the first part of this property is enforced by the 
 environment by making sure that the when a user splits, it cannot split to a value more than it 
-is supposed to receive} \REMOVEE{The first part of this property is achieved by our ideal functionality 
-in step 1 of $\mathsf{pay}$ interface, by making sure that the when a user splits, it cannot 
-split to a value more than it is supposed to receive (text in red)}. \MESSAGEP{We can abstract this part by forcing it in the environment if clearer}\MESSAGEE{I removed the red text from the ideal functionality, but don't know exactly how to formulate that this is enforced by the environment. I wrote the new text above, but sounds vague and unclear.} The second part is achieved 
+is supposed to receive. \TODOE{Use a wrapper around our ideal functionality to make sure that environment restricts certain actions.} The second part is achieved 
 in step 3 of $\mathsf{pay}$ interface, which guarantees that the only way a payment will fail 
 for a user is if all of its right neighbors have aborted. Hence, the user has no one right 
 neighbor that pulled.
-
-\MESSAGEE{Can we even realize "an intermediary receives at least as many coins as it forwards"? I guess this just means that we consider rationale users who are not going go lock for more coins that they are supposed to receive, right?}
 
 \paragraph{Value Privacy}
 Value privacy means that the value of a transaction between two non-compromised users cannot 
@@ -238,7 +227,8 @@ be determined. Our ideal functionality achieves this property as it does not con
 who does not lie in the payment path, and for each transaction only the involved parties are 
 contacted. 
 \MESSAGEP{Ideally, we should recall the definitions that we had for credit networks and adjust them for PCN. Source here: \url{https://www.ndss-symposium.org/wp-content/uploads/2017/09/04_3_2.pdf}}
-\MESSAGEE{I modified it now, but I don't see a proper definition for value privacy in your paper apart from a sentence in the second paragraph of Section III.A.}
+
+\MESSAGEE{If the adversary is in both paths when a split happened, does he even know that both paths are part of the same payment? We can try to build value privacy and relationship anonymity based on this observation.}
 
 \paragraph{Completeness}
 Completeness means that the receiver cannot start pulling the coins before it has received 
@@ -255,7 +245,6 @@ multi-path) for the same value (and splitting in case of multi-path payment) are
 indistinguishable to the eyes of the intermediaries as long as there exists \emph{at least} 
 one honest users in the path (or per path in case of multi-path payment). 
 \MESSAGEP{As before with value privacy, it would be good to refer to that definition of credit networks and also the one in PCN (CCS'17)}
-\MESSAGEE{The definition I gave here is a modification of your CCS'17 definition. However, I got rid of the mathematical symbols that you have in your CCS'17 definition, to keep things more high level, and maybe it made it a bit vague. As for your credit network paper you have linked above, I do not see any definition of relationship anonymity there.}
 This is achieved by 
 our ideal functionality as every intermediate user only receives a unique identifier for 
 each payment, and such an identifier is independent from the identifiers of other users involved 
