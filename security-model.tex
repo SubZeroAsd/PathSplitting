@@ -91,6 +91,8 @@ means that the ideal functionality initializes a new empty copy of the correspon
 structure with every new payment, and therefore, the data structure is only available to 
 the payment operation. Our data structures are defined as follows:
 
+\TODOE{Global data structures will go away if we use an existing ideal functionality that 
+provides payment and channel management functionality.}
 \begin{itemize}
 	\item Global data structures
 	\begin{itemize}
@@ -112,7 +114,7 @@ the payment operation. Our data structures are defined as follows:
 		$\DD$ it is also indexed by a user identifier, however, unlike list $\DD$ it does not 
 		store the whole transaction data, and just stores the identifiers. More precisely, 
 		$\HH[U]$ refers to all payment identifiers $h$ in the current multi-path payment, where 
-		$U$ is the payer of the payment.
+		$U$ is the payee of the payment.
 		\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
 		receive during a multi-path payment. Similar to lists $\DD$ and $\HH$ it is indexed 
 		by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
