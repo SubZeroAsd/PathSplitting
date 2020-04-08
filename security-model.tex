@@ -159,39 +159,72 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 %$\BB$ via $\FF_{\BB}$ and adds $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends 
 %$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
 
-\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_{n+1})$ from a user $U_0$, $\FF$ 
-initializes the set $\JJ$ and lists $\DD, \HH, \VV$ as empty, sets $\VV[U_0] = v$, and executes 
-the following interactive protocol:
+\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_{n+1}, 
+\{(U_0^1,v_0^1,t_0^1),\ldots,(U_0^{k_0},v_0^{k_0},t_0^{k_0})\})$ from a user $U_0$, $\FF$ 
+initializes the set $\JJ$ and lists $\DD, \HH, \VV$ as empty, and for all $i \in [1,k_0]$, $\FF$ 
+enqueues $(U_0,U_0^i,v_0^i,t_0^i)$ to $\QQ$. Then, $\FF$ executes the following interactive 
+protocol:
 
 \begin{enumerate}
-	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
-	\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?} \TODOE{Ask Daniel about this.}, where $U_i$ replies with $(\mathsf{split}, 
-	\sid, \{(U_i^1,v_i^1,t_i^1),\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$ for $1 \leq k_i 
-	\leq n$. If the set is empty, 
-	then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
-	random $h_i^j$, and parses $\BB$ via $\FF_{\BB}$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
-	v^*, t^*, f^*)$.  If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
-	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ \REMOVEE{via an anonymous communication 
-	channel} and notifies $\sdv$, where $U_i^j$ replies either with $\top$ or $\bot$. In the 
-	latter case, $\FF$ aborts. Otherwise, $\FF$ adds $h_i^j$ to $\HH[U_i^j]$, sets $\VV[U_i^j] 
-	= \VV[U_i^j] + v_i^j$, and checks whether for all entries of the form $(c_{\langle U_i,U_i^j 
-	\rangle}, v^*, \cdot, \cdot) \in \LL$, it holds that $v^* \geq v_i^j$. If this is the case 
-	$\FF$ adds $d_i^j = (c_{\langle U_i,U_i^j \rangle},v^* - v_i^j, t_i^j, \bot)$ to $\DD[U_i]$, 
-	where $(c_{\langle U_i,U_i^j \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the 
-	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
-	then $\FF$ aborts.
+%	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
+%	\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?} \TODOE{Ask Daniel about this.}, where $U_i$ replies with $(\mathsf{split}, 
+%	\sid, \{(U_i^1,v_i^1,t_i^1),\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$ for $1 \leq k_i 
+%	\leq n$. If the set is empty, 
+%	then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
+%	random $h_i^j$, and parses $\BB$ via $\FF_{\BB}$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
+%	v^*, t^*, f^*)$.  If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
+%	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ \REMOVEE{via an anonymous communication 
+%	channel} and notifies $\sdv$, where $U_i^j$ replies either with $\top$ or $\bot$. In the 
+%	latter case, $\FF$ aborts. Otherwise, $\FF$ adds $h_i^j$ to $\HH[U_i]$, sets $\VV[U_i^j] 
+%	= \VV[U_i^j] + v_i^j$, and checks whether for all entries of the form $(c_{\langle U_i,U_i^j 
+%	\rangle}, v^*, \cdot, \cdot) \in \LL$, it holds that $v^* \geq v_i^j$. If this is the case 
+%	$\FF$ adds $d_i^j = (c_{\langle U_i,U_i^j \rangle},v^* - v_i^j, t_i^j, \bot)$ to $\DD[U_i]$, 
+%	where $(c_{\langle U_i,U_i^j \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the 
+%	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
+%	then $\FF$ aborts.
 	
-	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ sends $U_i$ with $\HH[U_i]$ \REMOVEE{through an 
-	anonymous communication channel}, and notifies $\sdv$. Each user can reply either with 
-	$\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
+	\item While $\QQ \neq \emptyset$, $\FF$ dequeues an element $(U^*,U_i,v_i,t_i)$ from $\QQ$, 
+	samples a random $h_i$, and parses $\BB$ via $\FF_{\BB}$ for an entry of the form 
+	$(c_{\langle U^*,U_i \rangle}, v^*, t^*, f^*)$. If such an entry exists, then $\FF$ sends 
+	the tuple $(h_i, c_{\langle U^*,U_i \rangle}, v_i, t_i)$ to the user $U_i$ and notifies 
+	$\sdv$, where $U_i$ replies either with $\top$ or $\bot$.  In the latter case, $\FF$ aborts. 
+	Otherwise, $\FF$ adds $h_i$ to $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$, and checks 
+	whether for all entries of the form $(c_{\langle U^*,U_i \rangle}, v^*, \cdot, \cdot) \in 
+	\LL$, it holds that $v^* \geq v_i$. If this is the case $\FF$ adds $d_i = (c_{\langle 
+	U^*,U_i \rangle},v^* - v_i, t_i, \bot)$ to $\DD[U^*]$, where $(c_{\langle U^*,U_i \rangle}, 
+	v^*, \cdot, \cdot) \in \LL$ is the entry with the lowest $v^*$. If any of the 
+	conditions above is not met, then $\FF$ aborts. Otherwise, if $U_i \neq U_{n+1}$, then $\FF$ 
+	sends $(\mathsf{split-}\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$, where 
+	$U_i$ replies with $(\mathsf{split}, \sid, \{(U_i^1,v_i^1,t_i^1),\ldots,
+	(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. For all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
+	$(U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$.
+	
+	\MESSAGEE{Using a queue we may end up having circles. I believe one can have them in practice too.}
+	
+%	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ sends $U_i$ with $\HH[U_i]$ \REMOVEE{through an 
+%	anonymous communication channel}, and notifies $\sdv$. Each user can reply either with 
+%	$\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
+	
+	\item If $\VV[U_{n+1}] \neq v$, then $\FF$ aborts. Otherwise, for all 
+	$i \in \{n+1,\ldots,1\}$, $\FF$ queries $U_i$ with $\HH[U_i]$, and notifies $\sdv$. Each user 
+	replies either with $\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to 
+	$\JJ$. Otherwise, it continues.
+	
+%	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
+%	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, \bot)$, and creates a set 
+%	$\mathcal{R}$, which is composed of all user identifiers $U_i^j$. Next, $\FF$ checks 
+%	whether $\mathcal{R} \subseteq \JJ$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, 
+%	and sends $(\bot, h_i^j)$ to $U_i$ and $\sdv$. Otherwise, $\FF$ updates $d_i^j$ as 
+%	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, h_i^j)$, adds $d_i^j$ to $\LL$, and 
+%	sends $(\top, h_i^j)$ to $U_i$ and $\sdv$.
 	
 	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
-	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, \bot)$, and creates a set 
-	$\mathcal{R}$, which is composed of all user identifiers $U_i^j$. Next, $\FF$ checks 
+	$d_i = (c_{\langle U_i,U^* \rangle}, v^*, t^*, \bot)$, and creates a set 
+	$\mathcal{R}$, which is composed of all user identifiers $U^*$. Next, $\FF$ checks 
 	whether $\mathcal{R} \subseteq \JJ$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, 
-	and sends $(\bot, h_i^j)$ to $U_i$ and $\sdv$. Otherwise, $\FF$ updates $d_i^j$ as 
-	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, h_i^j)$, adds $d_i^j$ to $\LL$, and 
-	sends $(\top, h_i^j)$ to $U_i$ and $\sdv$.
+	and sends $(\bot, h_i)$ to $U_i$ and $\sdv$. Otherwise, $\FF$ updates $d_i$ as 
+	$d_i^j = (c_{\langle U_i,U^* \rangle}, v^*, t^*, h_i)$, adds $d_i$ to $\LL$, and 
+	sends $(\top, h_i)$ to $U_i$ and $\sdv$.
 \end{enumerate}
 }}
 
