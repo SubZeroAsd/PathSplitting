@@ -109,12 +109,16 @@ provides payment and channel management functionality.}
 		\item List $\DD$, which records all off-chain transactions per multi-path payment. Each 
 		entry of $\DD$ is indexed by a user identifier $U$, and the entries have the same format 
 		as the entries of the list $\LL$. More precisely, $\DD[U]$ corresponds to all the 
-		transactions in the current multi-path payment where $U$ is the payer of the transaction. 
-		\item List $\HH$, which keeps track of off-chain payment identifiers. Similar to the list 
-		$\DD$ it is also indexed by a user identifier, however, unlike list $\DD$ it does not 
-		store the whole transaction data, and just stores the identifiers. More precisely, 
-		$\HH[U]$ refers to all payment identifiers $h$ in the current multi-path payment, where 
-		$U$ is the payee of the payment.
+		transactions in the current multi-path payment where $U$ is the payee of the transaction. 
+		\item List $\HH$, which keeps track of off-chain transaction identifiers. Similar to 
+		the list $\DD$ it is also indexed by a user identifier, however, unlike list $\DD$ it 
+		does not store the whole transaction data, and just stores the identifiers. More 
+		precisely, $\HH[U]$ refers to all transaction identifiers $h$ in the current multi-path 
+		payment, where $U$ is either the payer or payee of the transaction.
+		\item List $\RR$, which keeps track of all the users to whom a user $U$ pays. Similar to 
+		the previous lists, it is also indexed by a user identifier, and every entry is a set 
+		of other user identifiers. More precisely, $\RR[U]$ is the set of all the users with 
+		whom $U$ has a transaction, and in that transaction $U$ is the payer.
 		\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
 		receive during a multi-path payment. Similar to lists $\DD$ and $\HH$ it is indexed 
 		by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
@@ -163,9 +167,10 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 
 \textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_{n+1}, 
 \{(U_0^1,v_0^1,t_0^1),\ldots,(U_0^{k_0},v_0^{k_0},t_0^{k_0})\})$ from a user $U_0$, $\FF$ 
-initializes the set $\JJ$ and lists $\DD, \HH, \VV$ as empty, and for all $i \in [1,k_0]$, $\FF$ 
-enqueues $(U_0,U_0^i,v_0^i,t_0^i)$ to $\QQ$. Then, $\FF$ executes the following interactive 
-protocol:
+initializes the queue $\QQ$, set $\JJ$ and lists $\DD, \HH, \RR, \VV$ as empty. If the input 
+set is empty or $\sum_{i=1}^{k_0} v_0^i < v$, then $\FF$ aborts. Otherwise, for all $i \in 
+[1,k_0]$, it enqueues $(U_0,U_0^i,v_0^i,t_0^i)$ to $\QQ$, and adds $U_0^i$ to $\RR[U_0]$. Next, 
+$\FF$ executes the following interactive protocol:
 
 \begin{enumerate}
 %	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
@@ -188,18 +193,19 @@ protocol:
 	\item While $\QQ \neq \emptyset$, $\FF$ dequeues an element $(U^*,U_i,v_i,t_i)$ from $\QQ$, 
 	samples a random $h_i$, and parses $\BB$ via $\FF_{\BB}$ for an entry of the form 
 	$(c_{\langle U^*,U_i \rangle}, v^*, t^*, f^*)$. If such an entry exists, then $\FF$ sends 
-	the tuple $(h_i, c_{\langle U^*,U_i \rangle}, v_i, t_i)$ to the user $U_i$ and notifies 
-	$\sdv$, where $U_i$ replies either with $\top$ or $\bot$.  In the latter case, $\FF$ aborts. 
-	Otherwise, $\FF$ adds $h_i$ to $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$, and checks 
-	whether for all entries of the form $(c_{\langle U^*,U_i \rangle}, v^*, \cdot, \cdot) \in 
-	\LL$, it holds that $v^* \geq v_i$. If this is the case $\FF$ adds $d_i = (c_{\langle 
-	U^*,U_i \rangle},v^* - v_i, t_i, \bot)$ to $\DD[U^*]$, where $(c_{\langle U^*,U_i \rangle}, 
-	v^*, \cdot, \cdot) \in \LL$ is the entry with the lowest $v^*$. If any of the 
+	the tuple $(h_i, c_{\langle U^*,U_i \rangle}, v_i, t_i)$ to $U_i$ and $\sdv$, 
+	where $U_i$ replies either with $\top$ or $\bot$.  In the latter case, $\FF$ aborts. 
+	Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$, 
+	and checks whether for all entries of the form $(c_{\langle U^*,U_i \rangle}, v^*, \cdot, 
+	\cdot) \in \LL$, it holds that $v^* \geq v_i$. If this is the case $\FF$ adds 
+	$d_i = (c_{\langle U^*,U_i \rangle},v^* - v_i, t_i, \bot)$ to $\DD[U_i]$, where 
+	$(c_{\langle U^*,U_i \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the lowest 
+	$v^*$. If any of the 
 	conditions above is not met, then $\FF$ aborts. Otherwise, if $U_i \neq U_{n+1}$, then $\FF$ 
 	sends $(\mathsf{split-}\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$, where 
 	$U_i$ replies with $(\mathsf{split}, \sid, \{(U_i^1,v_i^1,t_i^1),\ldots,
 	(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. For all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
-	$(U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$.
+	$(U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
 	
 	\MESSAGEE{Using a queue we may end up having circles. I believe one can have them in practice too.}
 	
@@ -220,13 +226,11 @@ protocol:
 %	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, h_i^j)$, adds $d_i^j$ to $\LL$, and 
 %	sends $(\top, h_i^j)$ to $U_i$ and $\sdv$.
 	
-	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
-	$d_i = (c_{\langle U_i,U^* \rangle}, v^*, t^*, \bot)$, and creates a set 
-	$\mathcal{R}$, which is composed of all user identifiers $U^*$. Next, $\FF$ checks 
-	whether $\mathcal{R} \subseteq \JJ$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, 
-	and sends $(\bot, h_i)$ to $U_i$ and $\sdv$. Otherwise, $\FF$ updates $d_i$ as 
-	$d_i^j = (c_{\langle U_i,U^* \rangle}, v^*, t^*, h_i)$, adds $d_i$ to $\LL$, and 
-	sends $(\top, h_i)$ to $U_i$ and $\sdv$.
+	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ checks whether $\RR[U_i] \subseteq \JJ$. If 
+	this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, \HH[U_i])$ to $U_i$ and 
+	$\sdv$. Otherwise, $\FF$ updates every $d_i \in \DD[U_i]$ as $(-, -, -, h_i)$ with the 
+	corresponding $h_i$ from $\HH[U_i]$, adds $d_i$ to $\LL$, and sends $(\top, h_i)$ to $U_i$ 
+	and $\sdv$.
 \end{enumerate}
 }}
 
