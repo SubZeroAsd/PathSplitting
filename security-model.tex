@@ -50,6 +50,8 @@ and it can be updated by multiple instances of our ideal functionality or by oth
 simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
 number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
 
+\TODOE{Replace the ledger functionality with a more appropriate payment channel functionality.}
+
 \TODOE{Add interfaces for hybrid ideal functionalities and call these interfaces in our own ideal functionalities.}
 
 \paragraph{Universal Composability}
@@ -295,7 +297,7 @@ in the same payment.
 In the following we define an ideal functionality $\FF_{\mathsf{MPMHL}}$ for {\sysname}s, which 
 models the cryptographic lock functionality. Similar to $\FF_{\mathsf{MPPCN}}$, our ideal 
 functionality $\FF_{\mathsf{MPMHL}}$ also works in interaction with a universe of users 
-$\mathbb{U}$.  Our $\FF_{\sysname}$ ideal functionality can be seen in \cref{fig:ideal-func}.
+$\mathbb{U}$.
 $\FF_{\mathsf{MPMHL}}$ makes use of $\FF_{\anon}, \FF_{\smt}$ and $\FF_{\syn}$, thus, it is 
 defined in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model. The data structures and 
 operations that $\FF_{\mathsf{MPMHL}}$ defines are shown below. Our ideal functionality 
