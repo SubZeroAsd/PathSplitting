@@ -122,7 +122,8 @@ provides payment and channel management functionality.}
 		\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
 		receive during a multi-path payment. Similar to lists $\DD$ and $\HH$ it is indexed 
 		by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
-		user $U$ is supposed to receive after a successful execution of a multi-pay payment.
+		user $U$ is supposed to receive after a successful execution of a multi-path payment.
+		\item List $\UU$, which keeps track of all the users involved in the multi-path payment.
 		\item Set $\JJ$, which keeps track of the users who aborted during the execution of 
 		a multi-path payment. Hence, it only stores the user identifiers.
 	\end{itemize}
@@ -134,8 +135,8 @@ users of the PCN. The execution starts with $\FF_{\mathsf{MPPCN}}$ initializing 
 set $\CC$, and empty list $\LL$. Users of the PCN can query $\FF_{\mathsf{MPPCN}}$ on $\open$ 
 interface to open new payment channels, and query on $\close$ interface to close them to any 
 valid state that is in $\LL$. The multi-path payment operation is initiated with a call to 
-$\mathsf{pay}$ interface by user $U_0$ (sender) on input a payment value $v$ and receiver 
-identifier $U_{n+1}$. Then, $\FF_{\mathsf{MPPCN}}$ checks whether all the channels on the paths 
+$\mathsf{pay}$ interface by user $U_s$ (sender) on input a payment value $v$ and receiver 
+identifier $U_r$. Then, $\FF_{\mathsf{MPPCN}}$ checks whether all the channels on the paths 
 have enough capacity and whether the intermediaries allow the payments. If these conditions are 
 satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once the payment has 
 reached the receiver, each user can again decide to interrupt the flow of the payment or not 
@@ -165,12 +166,12 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 %$\BB$ via $\FF_{\BB}$ and adds $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends 
 %$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
 
-\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_{n+1}, 
-\{(U_0^1,v_0^1,t_0^1),\ldots,(U_0^{k_0},v_0^{k_0},t_0^{k_0})\})$ from a user $U_0$, $\FF$ 
-initializes the queue $\QQ$, set $\JJ$ and lists $\DD, \HH, \RR, \VV$ as empty. If the input 
-set is empty or $\sum_{i=1}^{k_0} v_0^i < v$, then $\FF$ aborts. Otherwise, for all $i \in 
-[1,k_0]$, it enqueues $(U_0,U_0^i,v_0^i,t_0^i)$ to $\QQ$, and adds $U_0^i$ to $\RR[U_0]$. Next, 
-$\FF$ executes the following interactive protocol:
+\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_r,\{(U_s^1,v_s^1,t_s^1),
+\ldots,(U_s^{k_s},v_s^{k_s},t_s^{k_s})\})$ from a user $U_s$, $\FF$ initializes the queue $\QQ$, 
+set $\JJ$ and lists $\DD, \HH, \RR, \VV, \UU$ as empty. If the input set is empty or 
+$\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts. Otherwise, for all $i \in [1,k_s]$, it enqueues 
+$(U_s,U_s^i,v_s^i,t_s^i)$ to $\QQ$, adds $U_s^i$ to $\RR[U_s]$ and $U_s$ to $\UU$. 
+Next, $\FF$ executes the following interactive protocol:
 
 \begin{enumerate}
 %	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
@@ -191,21 +192,20 @@ $\FF$ executes the following interactive protocol:
 %	then $\FF$ aborts.
 	
 	\item While $\QQ \neq \emptyset$, $\FF$ dequeues an element $(U^*,U_i,v_i,t_i)$ from $\QQ$, 
-	samples a random $h_i$, and parses $\BB$ via $\FF_{\BB}$ for an entry of the form 
-	$(c_{\langle U^*,U_i \rangle}, v^*, t^*, f^*)$. If such an entry exists, then $\FF$ sends 
-	the tuple $(h_i, c_{\langle U^*,U_i \rangle}, v_i, t_i)$ to $U_i$ and $\sdv$, 
+	adds $U_i$ to $\UU$, samples a random $h_i$, and parses $\BB$ via $\FF_{\BB}$ for an entry 
+	of the form $(c_{\langle U^*,U_i \rangle}, v^*, t^*, f^*)$. If such an entry exists, then 
+	$\FF$ sends the tuple $(h_i, c_{\langle U^*,U_i \rangle}, v_i, t_i)$ to $U_i$ and $\sdv$, 
 	where $U_i$ replies either with $\top$ or $\bot$.  In the latter case, $\FF$ aborts. 
 	Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$, 
 	and checks whether for all entries of the form $(c_{\langle U^*,U_i \rangle}, v^*, \cdot, 
 	\cdot) \in \LL$, it holds that $v^* \geq v_i$. If this is the case $\FF$ adds 
 	$d_i = (c_{\langle U^*,U_i \rangle},v^* - v_i, t_i, \bot)$ to $\DD[U_i]$, where 
 	$(c_{\langle U^*,U_i \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the lowest 
-	$v^*$. If any of the 
-	conditions above is not met, then $\FF$ aborts. Otherwise, if $U_i \neq U_{n+1}$, then $\FF$ 
-	sends $(\mathsf{split-}\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$, where 
-	$U_i$ replies with $(\mathsf{split}, \sid, \{(U_i^1,v_i^1,t_i^1),\ldots,
-	(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. For all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
-	$(U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
+	$v^*$. If any of the conditions above is not met, then $\FF$ aborts. Otherwise, if 
+	$U_i \neq U_r$, then $\FF$ sends $(\mathsf{split-}\mathsf{req}, \sid, \NEWE{U_r}, v_i)$ 
+	to $U_i$ and $\sdv$, where $U_i$ replies with $(\mathsf{split}, \sid, \{(U_i^1,v_i^1,t_i^1),
+	\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. Then, for all $j \in \{1,\ldots,k_i\}$, $\FF$ 
+	enqueues $(U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
 	
 	\MESSAGEE{Using a queue we may end up having circles. I believe one can have them in practice too.}
 	
@@ -213,10 +213,10 @@ $\FF$ executes the following interactive protocol:
 %	anonymous communication channel}, and notifies $\sdv$. Each user can reply either with 
 %	$\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
 	
-	\item If $\VV[U_{n+1}] \neq v$, then $\FF$ aborts. Otherwise, for all 
-	$i \in \{n+1,\ldots,1\}$, $\FF$ queries $U_i$ with $\HH[U_i]$, and notifies $\sdv$. Each user 
-	replies either with $\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to 
-	$\JJ$. Otherwise, it continues.
+	\item If $\VV[U_r] \neq v$, then $\FF$ aborts. Otherwise, for all $i \in \{|\UU|,\ldots,1\}$, 
+	$\FF$ queries $U_i$ from $\UU$ with $\HH[U_i]$, and notifies $\sdv$. Each user replies either 
+	with $\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$. 
+	Otherwise, it continues.
 	
 %	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
 %	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, \bot)$, and creates a set 
@@ -226,18 +226,18 @@ $\FF$ executes the following interactive protocol:
 %	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, h_i^j)$, adds $d_i^j$ to $\LL$, and 
 %	sends $(\top, h_i^j)$ to $U_i$ and $\sdv$.
 	
-	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ checks whether $\RR[U_i] \subseteq \JJ$. If 
-	this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, \HH[U_i])$ to $U_i$ and 
-	$\sdv$. Otherwise, $\FF$ updates every $d_i \in \DD[U_i]$ as $(-, -, -, h_i)$ with the 
-	corresponding $h_i$ from $\HH[U_i]$, adds $d_i$ to $\LL$, and sends $(\top, h_i)$ to $U_i$ 
-	and $\sdv$.
+	\item For all $i \in \{|\UU|,\ldots,1\}$, $\FF$ checks whether $\RR[U_i] \subseteq \JJ$ for 
+	$U_i$ from $\UU$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, 
+	\HH[U_i])$ to $U_i$ and $\sdv$. Otherwise, $\FF$ updates every $d_i \in \DD[U_i]$ as 
+	$(-, -, -, h_i)$ for the corresponding $h_i$ from $\HH[U_i]$, adds $d_i$ to $\LL$, and 
+	sends $(\top, \HH[U_i])$ to $U_i$ and $\sdv$.
 \end{enumerate}
 }}
 
 \TODOP{I didn't fully get all the details. Revisit}
 
 \MESSAGEP{We wanted to \emph{merge} PCN and Lock functionalities, right?}
-\MESSAGEE{If we include lock interfaces here, it means that a way to realize a PCN is through a protocol that realized the lock ideal functionality. We can either keep it more generic (like it is now) I guess.}
+\MESSAGEE{If we include the lock interfaces here, it means that the only way to realize a PCN is through a protocol that realizes the lock ideal functionality. Instead we can keep it more generic (like it is now) I guess.}
 
 \caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the $(\FF_{\BB}, \FF_{\anon}, 
 \FF_{\syn})$-hybrid model}
