@@ -11,10 +11,10 @@ framework of Canetti \cite{canetti}.
 \paragraph{Attacker Model}
 We model parties as interactive Turing machines (ITMs), which communicate with a trusted 
 functionality $\FF$ via secure and authenticated communication channels. We model the 
-adversary $\adv$ as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
+adversary $\sdv$ as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
 which takes as input a party identifier $P$ and provides the attacker with the internal 
 state of $P$. From that point onward, all subsequent incoming and outgoing communication 
-of $P$ is routed through $\adv$. We consider the static corruption model, that is, the 
+of $P$ is routed through $\sdv$. We consider the static corruption model, that is, the 
 adversary is required to commit to the identifiers of the parties it wishes to corrupt 
 ahead of time.
 
@@ -50,12 +50,21 @@ in \cite{mpvsc}.
 %functionality, and interfaces send$_\anon$ and receive$_\anon$ to exchange messages via 
 %$\FF_{\anon}$.
 
-\paragraph{Ledger Functionality}
-We make use of the generalized payment channel functionality defined in 
-\MESSAGEE{Generalized Bitcoin-Compatible Channels paper}, which we denote here as 
-$\FF_{\mathsf{GC}}$. This ideal functionality uses internally a ledger functionality, 
-denoted as $\LL$, and defined in GUC model. $\LL$ maintains a transaction set $\mathtt{TX}$, 
-which stores all the transactions that have happened.
+\paragraph{Payment Channel and Ledger Functionality}
+We make use of the payment channel functionality defined in \MESSAGEE{Generalized Bitcoin-Compatible Channels paper}, which we denote here as $\FF_{\GC}$. This ideal 
+functionality uses internally a ledger functionality define in GUC and denoted as $\LL$.
+It maintains a transaction set $\mathtt{TX}$, which stores all the transactions that have 
+happened. Furthermore, $\FF_{\GC}$ maintains a set $\Gamma$, where it stores the active 
+channels in their latest state. $\FF_{\GC}$ defines a channel $\gamma$ as an attribute tuple 
+$(\gamma.\cid, \gamma.\users, \gamma.\cash, \gamma.\st)$, where $\gamma.\cid \in \{0,1\}^*$ is 
+the channel identifier, $\gamma.\users \in \mathbb{P}^2$ defines the identities of the channel 
+users, $\gamma.\cash \in \mathbb{R}^{\geq 0}$ represents the total amount of coins locked in 
+this channel, and $\gamma.\st = (\theta_1,\ldots,\theta_n)$ is the state of the channel 
+composed of a list of outputs. Each output $\theta_i$ has two attributes: the value $\theta_i.
+\cash \in \mathbb{R}^{\geq 0}$, representing the amount of coins, and the function $\theta_i.
+\varphi \colon \{0,1\}^* \to \{0,1\}$, representing the spending condition of the output. 
+For convenience, $\FF_{\GC}$ defines the function $\gamma.\otherParty \colon \gamma.\users \to 
+\gamma.\users$ as $\gamma.\otherParty(P) = Q$ for $\gamma.\users = \{P,Q\}$.
 
 %We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
 %The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
@@ -64,8 +73,6 @@ which stores all the transactions that have happened.
 %and it can be updated by multiple instances of our ideal functionality or by other protocols 
 %simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
 %number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
-
-\TODOE{Replace the ledger functionality with a more appropriate payment channel functionality.}
 
 \TODOE{Add interfaces for hybrid ideal functionalities and call these interfaces in our own ideal functionalities.}
 
@@ -165,7 +172,6 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 \begin{figure*}[!t]
 \centering
 \fbox{\parbox{\textwidth}{
-\TODOE{Add the fees to value calculations.}
 
 %\textbf{Open Channel:} On input $(\open, \sid, c_{\langle U,U' \rangle}, v, U', t, f)$ from a 
 %user $U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed	 (i.e., contains valid 
@@ -183,12 +189,12 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 %$\BB$ via $\FF_{\BB}$ and adds $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends 
 %$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
 
-\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, \sid, v, U_r,\{(U_s^1,v_s^1,t_s^1),
-\ldots,(U_s^{k_s},v_s^{k_s},t_s^{k_s})\})$ from a user $U_s$, $\FF$ initializes the queue $\QQ$, 
-set $\JJ$ and lists $\DD, \HH, \RR, \VV, \UU$ as empty. If the input set is empty or 
-$\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts. Otherwise, for all $i \in [1,k_s]$, it enqueues 
-$(U_s,U_s^i,v_s^i,t_s^i)$ to $\QQ$, adds $U_s^i$ to $\RR[U_s]$ and $U_s$ to $\UU$. 
-Next, $\FF$ executes the following interactive protocol:
+\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, v, U_r,\{(\cid_s^1, U_s^1,v_s^1,t_s^1),
+\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})$ from a user $U_s$, $\FF$ initializes 
+the queue $\QQ$, set $\JJ$ and lists $\DD, \HH, \RR, \VV, \UU$ as empty. If the input set is 
+empty or x$\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts. Otherwise, for all $i \in [1,k_s]$, 
+it enqueues $(\cid_s^i, U_s,U_s^i,v_s^i,t_s^i)$ to $\QQ$, adds $U_s^i$ to $\RR[U_s]$ and $U_s$ 
+to $\UU$. Next, $\FF$ executes the following interactive protocol:
 
 \begin{enumerate}
 %	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
@@ -208,21 +214,20 @@ Next, $\FF$ executes the following interactive protocol:
 %	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
 %	then $\FF$ aborts.
 	
-	\item While $\QQ \neq \emptyset$, $\FF$ dequeues an element $(U^*,U_i,v_i,t_i)$ from $\QQ$, 
-	adds $U_i$ to $\UU$, samples a random $h_i$, and parses $\BB$ via $\FF_{\BB}$ for an entry 
-	of the form $(c_{\langle U^*,U_i \rangle}, v^*, t^*, f^*)$. If such an entry exists, then 
-	$\FF$ sends the tuple $(h_i, c_{\langle U^*,U_i \rangle}, v_i, t_i)$ to $U_i$ and $\sdv$, 
-	where $U_i$ replies either with $\top$ or $\bot$.  In the latter case, $\FF$ aborts. 
-	Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$, 
-	and checks whether for all entries of the form $(c_{\langle U^*,U_i \rangle}, v^*, \cdot, 
-	\cdot) \in \LL$, it holds that $v^* \geq v_i$. If this is the case $\FF$ adds 
-	$d_i = (c_{\langle U^*,U_i \rangle},v^* - v_i, t_i, \bot)$ to $\DD[U_i]$, where 
-	$(c_{\langle U^*,U_i \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the lowest 
-	$v^*$. If any of the conditions above is not met, then $\FF$ aborts. Otherwise, if 
-	$U_i \neq U_r$, then $\FF$ sends $(\mathsf{split-}\mathsf{req}, \sid, \NEWE{U_r}, v_i)$ 
-	to $U_i$ and $\sdv$, where $U_i$ replies with $(\mathsf{split}, \sid, \{(U_i^1,v_i^1,t_i^1),
-	\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. Then, for all $j \in \{1,\ldots,k_i\}$, $\FF$ 
-	enqueues $(U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
+	\item While $\QQ \neq \emptyset$, $\FF$ dequeues an element $(\cid_i,U^*,,U_i,v_i,t_i)$ from 
+	$\QQ$, adds $U_i$ to $\UU$, samples a random $h_i$, and queries $\FF_{\GC}$ with 
+	\NEWE{$(\mathsf{get}\mathsf{-channel}, \cid_i)$}. If a channel with identifier $\cid_i$ does 
+	not exists, then $\FF_{\GC}$ return $\bot$, and $\FF$ aborts. Otherwise, $\FF_{\GC}$ returns 
+	the channel $\gamma_i$, where $\gamma_i.\cid = \cid_i$. Then, $\FF$ sends the tuple 
+	$(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$, where $U_i$ replies either with $\top$ or 
+	$\bot$. In the latter case, $\FF$ aborts. Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and 
+	$\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$, and checks whether $\gamma_i.\cash \geq v_i$. 
+	If this is the case, $\FF$ adds $d_i = (\gamma_i,U_i,v_i,t_i,h_i)$ to $\DD[U_i]$, otherwise, 
+	$\FF$ aborts. Lastly, if $U_i = U_r$, then $\FF$ continues with the next iteration of the 
+	loop. Otherwise, $\FF$ sends $(\mathsf{split}\mathsf{-req}, \NEWE{U_r}, v_i)$ to $U_i$ and 
+	$\sdv$, where $U_i$ replies with $(\mathsf{split}, \{(\cid_i^1,U_i^1,v_i^1,t_i^1),\ldots,
+	(\cid_i^{k_i},U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. Then, for all $j \in \{1,\ldots,k_i\}$, 
+	$\FF$ enqueues $(\cid_i^j,U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
 	
 	\MESSAGEE{Using a queue we may end up having circles. I believe one can have them in practice too.}
 	
@@ -245,9 +250,13 @@ Next, $\FF$ executes the following interactive protocol:
 	
 	\item For all $i \in \{|\UU|,\ldots,1\}$, $\FF$ checks whether $\RR[U_i] \subseteq \JJ$ for 
 	$U_i$ from $\UU$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, 
-	\HH[U_i])$ to $U_i$ and $\sdv$. Otherwise, $\FF$ updates every $d_i \in \DD[U_i]$ as 
-	$(-, -, -, h_i)$ for the corresponding $h_i$ from $\HH[U_i]$, adds $d_i$ to $\LL$, and 
-	sends $(\top, \HH[U_i])$ to $U_i$ and $\sdv$.
+	\HH[U_i])$ to $U_i$ and $\sdv$. Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ 
+	parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,v_j,t_j,h_j)$, creates $\vec{\theta} = 
+	(\theta_{U_i} := (\gamma_j.\cash - v_j, \theta_{U_i}.\varphi, \theta_{U_j} := (\gamma_j.
+	\cash + v_j, \theta_{U_j}.\varphi)$ \TODOP{How to write the conditions here?}, 
+	and queries $\FF_{\GC}$ with $(\mathsf{update},\gamma_j.\cid,\vec{\theta},t_j)$. If the 
+	call to $\FF_{\GC}$ succeeds, then $\FF$ sends $(\top, \HH[U_i])$ to $U_i$ and $\sdv$, 
+	otherwise it sends $(\bot, \HH[U_i])$ to $U_i$ and $\sdv$.
 \end{enumerate}
 }}
 
