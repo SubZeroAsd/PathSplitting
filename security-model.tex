@@ -6,7 +6,8 @@
 
 We formalize the security and privacy notions of a multi-path payment channel network (MPPCN) 
 and multi-path multi-hop locks (\sysname). We make use of the universal composability (UC) 
-framework of Canetti \cite{canetti}.
+framework of Canetti \cite{canetti}. Our ideal functionalities work in interaction with 
+a universe of users $\mathbb{U}$, and with an adversary $\sdv$.
 
 \paragraph{Attacker Model}
 We model parties as interactive Turing machines (ITMs), which communicate with a trusted 
@@ -25,23 +26,23 @@ ahead of time.
 %arbitrarily. However, the adversary can neither read nor change the content of the messages.
 
 We consider a synchronous communication network, where communication proceeds in discrete 
-rounds. We follow \cite{kmtz}, which in turn follows \cite{mpvsc}, and formalize the notion of 
+rounds. We follow \cite{kmtz}, which in turn follows \cite{mpvsc}, and formalizes the notion of 
 rounds via an ideal functionality $\FF_{\mathsf{clock}}$, which represents the clock. The ideal 
 functionality requires all honest parties to indicate that they are ready to proceed to the next 
 round before the clock is ticked. Similar to \cite{mpvsc}, we treat the clock functionality as a 
-global ideal functionality defined in global UC (GUC) model. This implies that all the parties 
-are aware of the given round. 
+global ideal functionality defined in global UC (GUC) model \cite{guc}. This implies that all 
+parties are aware of the given round. 
 
-We assume the parties are connected via authenticated communication channels with guaranteed 
+We assume that the parties are connected via authenticated communication channels with guaranteed 
 delivery of exactly one round. Hence, if a party $P$ sends a message $m$ to party $Q$ in round 
-$r$, party $Q$ receives the message in the beginning of round $r + 1$. Furthermore, $Q$ is sure 
-that the message was sent by $P$. The adversary can change the order of messages \MESSAGEE{also the content if we do not use $\FF_\smt$} that were sent in the same round, 
+$r$, party $Q$ receives the message at the beginning of round $r + 1$. Furthermore, $Q$ is sure 
+that the message was sent by $P$. The adversary can change the order of messages \MESSAGEE{also the content of the messages if we do not use $\FF_\smt$} that were sent in the same round, 
 but it cannot modify, delay or drop messages sent between parties, or it cannot insert a new 
-message. For simplicity, we assume that computation is instantaneous. The assumptions on the 
-communication channels are formalized as an ideal functionality $\FF_{\mathsf{GCD}}$, as defined 
+message. For simplicity, we assume that computation is instantaneous. These assumptions on the 
+communication channels are formalized as an ideal functionality $\FF_{\mathsf{GDC}}$, as defined 
 in \cite{mpvsc}.
 
-\TODOE{Figure out whether we actually need $\FF_{\smt}$ and $\FF_{\anon}$ or not for the sake of privacy (currently we do not use them).}
+\TODOE{Figure out whether we actually need $\FF_{\smt}$ and/or $\FF_{\anon}$ for the sake of privacy (currently we do not use them).}
 %\MESSAGEP{Do we really need $\FF_{\anon}$?}
 %\MESSAGEE{I think you use anonymous communication channel in your constructions in the CCS paper when senders sends data to the intermediaries and the receiver. Since the sender knows and prepares the whole path, you need to use it there to achieve any meaningful anonymity at all. However, in our case the sender does not know the whole path, so only talks with the receiver and its direct neighbors. Therefore, we may not need to use anonymous communication channel. But, we need to further discuss this to clarify what form of anonymity we are aiming for and achieving and whether we need anonymous communication channels to realize them.}
 %Furthermore, we assume existence of an anonymous communication channel as defined in 
@@ -57,14 +58,14 @@ It maintains a transaction set $\mathtt{TX}$, which stores all the transactions 
 happened. Furthermore, $\FF_{\GC}$ maintains a set $\Gamma$, where it stores the active 
 channels in their latest state. $\FF_{\GC}$ defines a channel $\gamma$ as an attribute tuple 
 $(\gamma.\cid, \gamma.\users, \gamma.\cash, \gamma.\st)$, where $\gamma.\cid \in \{0,1\}^*$ is 
-the channel identifier, $\gamma.\users \in \mathbb{P}^2$ defines the identities of the channel 
+the channel identifier, $\gamma.\users \in \mathbb{U}^2$ defines the identities of the channel 
 users, $\gamma.\cash \in \mathbb{R}^{\geq 0}$ represents the total amount of coins locked in 
 this channel, and $\gamma.\st = (\theta_1,\ldots,\theta_n)$ is the state of the channel 
 composed of a list of outputs. Each output $\theta_i$ has two attributes: the value $\theta_i.
 \cash \in \mathbb{R}^{\geq 0}$, representing the amount of coins, and the function $\theta_i.
 \varphi \colon \{0,1\}^* \to \{0,1\}$, representing the spending condition of the output. 
-For convenience, $\FF_{\GC}$ defines the function $\gamma.\otherParty \colon \gamma.\users \to 
-\gamma.\users$ as $\gamma.\otherParty(P) = Q$ for $\gamma.\users = \{P,Q\}$.
+%For convenience, $\FF_{\GC}$ defines the function $\gamma.\otherParty \colon \gamma.\users \to 
+%\gamma.\users$ as $\gamma.\otherParty(P) = Q$ for $\gamma.\users = \{P,Q\}$.
 
 %We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
 %The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
@@ -95,34 +96,37 @@ indistinguishable.
 
 In this section we define an ideal functionality $\FF_{\mathsf{MPPCN}}$ for MPPCNs. 
 $\FF_{\mathsf{MPPCN}}$ works in interaction with a universe of users $\mathbb{U}$, and with an 
-adversary $\sdv$. To ease the exposition, we assume that there is a 
-well-known ordering of the users in a sense that a user $U_i$ can only transact with user $U_j$ 
-if $j > i$ for $i,j \in \NN$. For simplicity, we only consider unidirectional channels, 
-however, we note that our functionality can be easily extended to support bidirectional 
-channels. \MESSAGEP{We might want to do an intuitive argument of how to extend it or avoid this point.}\MESSAGEE{If we make use of an ideal functionality that implements bi-directional payment channel networks, then this becomes trivial, as we just use the interfaces of that ideal functionality for updates in both directions.} $\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\BB}$, $\FF_{\anon}$ and $\FF_{\syn}$, 
-hence, it is defined in $(\FF_{\BB}, \FF_{\anon}, \FF_{\syn})$-hybrid model. Furthermore, 
+adversary $\sdv$. For simplicity, we only consider unidirectional channels, however, we note 
+that our functionality can be easily extended to support bidirectional channels. 
+\MESSAGEP{We might want to do an intuitive argument of how to extend it or avoid this point.}
+\MESSAGEE{If we make use of an ideal functionality that implements bi-directional payment channel networks, then this becomes trivial, as we just use the interfaces of that ideal functionality for updates in both directions. Does $\FF_{\GC}$ support this?} 
+$\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\GC}$ and $\FF_{\mathsf{GDC}}$, 
+hence, it is defined in $(\FF_{\GC}, \FF_{\mathsf{GDC}})$-hybrid model. Furthermore, 
 $\FF_{\mathsf{MPPCN}}$ defines various data structures and operations explained below. 
 Our ideal functionality $\FF_{\mathsf{MPPCN}}$ can be seen in \cref{fig:ideal-mppcn}.
 
 \paragraph{Data Structures} 
 In order to simplify the presentation of our ideal functionality, we define several data 
-structures, where a data structure can be global or payment-specific. Global means that the 
-data structure is initialized once and updated throughout the lifetime of the system, and it 
-is available to every operation of the ideal functionality. On the other hand, payment-specific 
-means that the ideal functionality initializes a new empty copy of the corresponding data 
-structure with every new payment, and therefore, the data structure is only available to 
-the payment operation. Our data structures are defined as follows:
+structures:
+%where a data structure can be global or payment-specific. Global means that the 
+%data structure is initialized once and updated throughout the lifetime of the system, and it 
+%is available to every operation of the ideal functionality. On the other hand, payment-specific 
+%means that the ideal functionality initializes a new empty copy of the corresponding data 
+%structure with every new payment, and therefore, the data structure is only available to 
+%the payment operation. Our data structures are defined as follows:
 
 \begin{itemize}
-	\item List $\DD$, which records all off-chain transactions per multi-path payment. Each 
-	entry of $\DD$ is indexed by a user identifier $U$, and the entries have the same format 
-	as the entries of the list $\LL$. More precisely, $\DD[U]$ corresponds to all the 
-	transactions in the current multi-path payment where $U$ is the payee of the transaction. 
+	\item List $\DD$, which records all off-chain transactions related data per multi-path 
+	payment. Each entry of $\DD$ is indexed by a user identifier $U$, and the entries have the 
+	format $(\gamma_i,U_i,v_i,t_i)$, where $\gamma_i$ is the channel between user $U$ and $U_i$, 
+	$U_i$ is the identifier of the payer, $v_i$ is the payment value, and $t_i$ is the 
+	associated timeout. More precisely, $\DD[U]$ stores data related to all transactions, 
+	where $U$ is the payee of the transaction. 
 	\item List $\HH$, which keeps track of off-chain transaction identifiers. Similar to 
 	the list $\DD$ it is also indexed by a user identifier, however, unlike list $\DD$ it 
-	does not store the whole transaction data, and just stores the identifiers. More 
-	precisely, $\HH[U]$ refers to all transaction identifiers $h$ in the current multi-path 
-	payment, where $U$ is either the payer or payee of the transaction.
+	does not store the transaction data, and just stores the identifiers. More precisely, 
+	$\HH[U]$ refers to all transaction identifiers $h$ in the current multi-path payment, 
+	where $U$ is either the payer or payee of the transaction.
 	\item List $\RR$, which keeps track of all the users to whom a user $U$ pays. Similar to 
 	the previous lists, it is also indexed by a user identifier, and every entry is a set 
 	of other user identifiers. More precisely, $\RR[U]$ is the set of all the users with 
@@ -132,10 +136,13 @@ the payment operation. Our data structures are defined as follows:
 	by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
 	user $U$ is supposed to receive after a successful execution of a multi-path payment.
 	\item List $\UU$, which keeps track of all the users involved in the multi-path payment.
+	\item Queue $\QQ$, which keeps track of the remaining transactions in the multi-path payment.
 	\item Set $\JJ$, which keeps track of the users who aborted during the execution of 
 	a multi-path payment. Hence, it only stores the user identifiers.
 \end{itemize}
-	
+
+\MESSAGEE{Operations paragraph is obsolete for now, and will be updated once we decide on 
+the final version of the ideal functionality.}
 \paragraph{Operations}
 In \cref{fig:ideal-mppcn} we describe the interactions between $\FF_{\mathsf{MPPCN}}$ and the 
 users of the PCN. The execution starts with $\FF_{\mathsf{MPPCN}}$ initializing a local empty 
@@ -149,8 +156,6 @@ satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once
 reached the receiver, each user can again decide to interrupt the flow of the payment or not 
 (step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes that the operation was 
 successful, and adds the updated channel states to $\LL$ (step 3).
-
-\TODOE{Extend this part once we settle on the final version of the ideal functionality.}
 
 \begin{figure*}[!t]
 \centering
@@ -258,8 +263,8 @@ Next, $\FF$ executes the following interactive protocol:
 		\item Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ does the following
 		\begin{itemize}[label=$\circ$]
 			\item Parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,v_j,t_j)$.
-			\item Creates $\vec{\theta} = (\theta_{U_i} := (\gamma_j.\cash - v_j, \theta_{U_i}.
-			\varphi, \theta_{U_j} := (\gamma_j.\cash + v_j, \theta_{U_j}.\varphi)$. \TODOP{How to write the conditions here?}
+			\item Creates $\vec{\theta} = (\theta_{U_j} := (\gamma_j.\cash - v_j, \theta_{U_j}.
+			\varphi), \theta_{U_i} := (\gamma_j.\cash + v_j, \theta_{U_i}.\varphi)$. \TODOP{How to write the conditions here?}
 			\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{update},\gamma_j.\cid,
 			\vec{\theta},t_j)$}.
 			\item If the call to $\FF_{\GC}$ succeeds, then $\FF$ sends $(\top, \HH[U_i])$ to 
@@ -309,10 +314,10 @@ contacted.
 Completeness means that the receiver cannot start pulling the coins before it has received 
 enough transactions, whose sum amount equals the total coins he is supposed to receive by 
 the sender. Our ideal functionality keeps track of the amount of coins each user in the 
-multi-path payment will receive in the list $\VV$, and it performs a check in step 1 of 
-$\mathsf{pay}$ interface to make sure that the amount of coins the receiver will receive equals 
-the amount with which the sender invoked the $\mathsf{pay}$ interface. Hence, our ideal 
-functionality achieves this property as well.
+multi-path payment will receive in the list $\VV$, and it performs a check at the beginning of 
+step 2 of the $\mathsf{pay}$ interface to make sure that the amount of coins the receiver will 
+receive equals the amount with which the sender invoked the $\mathsf{pay}$ interface. Hence, our 
+ideal functionality achieves this property as well.
 
 \paragraph{Relationship Anonymity}
 Relationship anonymity roughly means that any two simultaneous payments over the same path (or 
