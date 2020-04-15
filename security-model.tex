@@ -28,7 +28,7 @@ We consider a synchronous communication network, where communication proceeds in
 rounds. We follow \cite{kmtz}, which in turn follows \cite{mpvsc}, and formalize the notion of 
 rounds via an ideal functionality $\FF_{\mathsf{clock}}$, which represents the clock. The ideal 
 functionality requires all honest parties to indicate that they are ready to proceed to the next 
-round before the clock is ticked. Similar to \cite{mpvsc} we treat the clock functionality as a 
+round before the clock is ticked. Similar to \cite{mpvsc}, we treat the clock functionality as a 
 global ideal functionality defined in global UC (GUC) model. This implies that all the parties 
 are aware of the given round. 
 
@@ -74,8 +74,6 @@ For convenience, $\FF_{\GC}$ defines the function $\gamma.\otherParty \colon \ga
 %simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
 %number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
 
-\TODOE{Add interfaces for hybrid ideal functionalities and call these interfaces in our own ideal functionalities.}
-
 \paragraph{Universal Composability}
 We now review the notion of secure realization in the UC framework~\cite{canetti}. 
 Intuitively, a protocol realizes an ideal functionality if the environment has no way 
@@ -115,42 +113,27 @@ means that the ideal functionality initializes a new empty copy of the correspon
 structure with every new payment, and therefore, the data structure is only available to 
 the payment operation. Our data structures are defined as follows:
 
-\TODOE{Global data structures will go away if we use an existing ideal functionality that 
-provides payment and channel management functionality.}
 \begin{itemize}
-	\item Global data structures
-	\begin{itemize}
-		\item List $\CC$, which keeps track of all closed channels locally. The entries in $\CC$ 
-		are of the form $c_{\langle U,U' \rangle}$, which corresponds to the channel identifier.
-		\item List $\LL$, which records the off-chain payments locally. The entries in $\LL$ are 
-		defined as $(c_{\langle U,U' \rangle}, v, t, h)$, where $c_{\langle U,U' \rangle}$ is the 
-		corresponding channel identifier, $v$ is the amount of credit used, $t$ is the expiration 
-		time of the payment, and $h$ is the identifier for this entry.
-	\end{itemize}
-	
-	\item Payment-specific data structures
-	\begin{itemize}
-		\item List $\DD$, which records all off-chain transactions per multi-path payment. Each 
-		entry of $\DD$ is indexed by a user identifier $U$, and the entries have the same format 
-		as the entries of the list $\LL$. More precisely, $\DD[U]$ corresponds to all the 
-		transactions in the current multi-path payment where $U$ is the payee of the transaction. 
-		\item List $\HH$, which keeps track of off-chain transaction identifiers. Similar to 
-		the list $\DD$ it is also indexed by a user identifier, however, unlike list $\DD$ it 
-		does not store the whole transaction data, and just stores the identifiers. More 
-		precisely, $\HH[U]$ refers to all transaction identifiers $h$ in the current multi-path 
-		payment, where $U$ is either the payer or payee of the transaction.
-		\item List $\RR$, which keeps track of all the users to whom a user $U$ pays. Similar to 
-		the previous lists, it is also indexed by a user identifier, and every entry is a set 
-		of other user identifiers. More precisely, $\RR[U]$ is the set of all the users with 
-		whom $U$ has a transaction, and in that transaction $U$ is the payer.
-		\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
-		receive during a multi-path payment. Similar to lists $\DD$ and $\HH$ it is indexed 
-		by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
-		user $U$ is supposed to receive after a successful execution of a multi-path payment.
-		\item List $\UU$, which keeps track of all the users involved in the multi-path payment.
-		\item Set $\JJ$, which keeps track of the users who aborted during the execution of 
-		a multi-path payment. Hence, it only stores the user identifiers.
-	\end{itemize}
+	\item List $\DD$, which records all off-chain transactions per multi-path payment. Each 
+	entry of $\DD$ is indexed by a user identifier $U$, and the entries have the same format 
+	as the entries of the list $\LL$. More precisely, $\DD[U]$ corresponds to all the 
+	transactions in the current multi-path payment where $U$ is the payee of the transaction. 
+	\item List $\HH$, which keeps track of off-chain transaction identifiers. Similar to 
+	the list $\DD$ it is also indexed by a user identifier, however, unlike list $\DD$ it 
+	does not store the whole transaction data, and just stores the identifiers. More 
+	precisely, $\HH[U]$ refers to all transaction identifiers $h$ in the current multi-path 
+	payment, where $U$ is either the payer or payee of the transaction.
+	\item List $\RR$, which keeps track of all the users to whom a user $U$ pays. Similar to 
+	the previous lists, it is also indexed by a user identifier, and every entry is a set 
+	of other user identifiers. More precisely, $\RR[U]$ is the set of all the users with 
+	whom $U$ has a transaction, and in that transaction $U$ is the payer.
+	\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
+	receive during a multi-path payment. Similar to lists $\DD$ and $\HH$ it is indexed 
+	by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
+	user $U$ is supposed to receive after a successful execution of a multi-path payment.
+	\item List $\UU$, which keeps track of all the users involved in the multi-path payment.
+	\item Set $\JJ$, which keeps track of the users who aborted during the execution of 
+	a multi-path payment. Hence, it only stores the user identifiers.
 \end{itemize}
 	
 \paragraph{Operations}
@@ -190,11 +173,16 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 %$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
 
 \textbf{Multi-Path Payment:} On input $(\mathsf{pay}, v, U_r,\{(\cid_s^1, U_s^1,v_s^1,t_s^1),
-\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})$ from a user $U_s$, $\FF$ initializes 
-the queue $\QQ$, set $\JJ$ and lists $\DD, \HH, \RR, \VV, \UU$ as empty. If the input set is 
-empty or x$\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts. Otherwise, for all $i \in [1,k_s]$, 
-it enqueues $(\cid_s^i, U_s,U_s^i,v_s^i,t_s^i)$ to $\QQ$, adds $U_s^i$ to $\RR[U_s]$ and $U_s$ 
-to $\UU$. Next, $\FF$ executes the following interactive protocol:
+\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})$ from a user $U_s$, $\FF$ proceeds 
+as follows 
+\begin{itemize}[label=-]
+	\item Initializes the queue $\QQ$, set $\JJ$ and lists $\DD, \HH, \RR, \VV, \UU$ as empty.
+	\item If the input set is empty or x$\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts.
+	\item Otherwise, for all $i \in [1,k_s]$, it enqueues $(\cid_s^i, U_s,U_s^i,v_s^i,t_s^i)$ 
+	to $\QQ$, adds $U_s^i$ to $\RR[U_s]$ and $U_s$ to $\UU$.
+\end{itemize}
+ 
+Next, $\FF$ executes the following interactive protocol:
 
 \begin{enumerate}
 %	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
@@ -214,20 +202,30 @@ to $\UU$. Next, $\FF$ executes the following interactive protocol:
 %	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
 %	then $\FF$ aborts.
 	
-	\item While $\QQ \neq \emptyset$, $\FF$ dequeues an element $(\cid_i,U^*,,U_i,v_i,t_i)$ from 
-	$\QQ$, adds $U_i$ to $\UU$, samples a random $h_i$, and queries $\FF_{\GC}$ with 
-	\NEWE{$(\mathsf{get}\mathsf{-channel}, \cid_i)$}. If a channel with identifier $\cid_i$ does 
-	not exists, then $\FF_{\GC}$ return $\bot$, and $\FF$ aborts. Otherwise, $\FF_{\GC}$ returns 
-	the channel $\gamma_i$, where $\gamma_i.\cid = \cid_i$. Then, $\FF$ sends the tuple 
-	$(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$, where $U_i$ replies either with $\top$ or 
-	$\bot$. In the latter case, $\FF$ aborts. Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and 
-	$\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$, and checks whether $\gamma_i.\cash \geq v_i$. 
-	If this is the case, $\FF$ adds $d_i = (\gamma_i,U_i,v_i,t_i,h_i)$ to $\DD[U_i]$, otherwise, 
-	$\FF$ aborts. Lastly, if $U_i = U_r$, then $\FF$ continues with the next iteration of the 
-	loop. Otherwise, $\FF$ sends $(\mathsf{split}\mathsf{-req}, \NEWE{U_r}, v_i)$ to $U_i$ and 
-	$\sdv$, where $U_i$ replies with $(\mathsf{split}, \{(\cid_i^1,U_i^1,v_i^1,t_i^1),\ldots,
-	(\cid_i^{k_i},U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$. Then, for all $j \in \{1,\ldots,k_i\}$, 
-	$\FF$ enqueues $(\cid_i^j,U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
+	\item While $\QQ \neq \emptyset$, $\FF$ does the following
+	\begin{itemize}[label=-]
+		\item Dequeues an element $(\cid_i,U^*,,U_i,v_i,t_i)$ from $\QQ$.
+		\item Adds $U_i$ to $\UU$, and samples a random $h_i$.
+		\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{get}\mathsf{-channel}, \cid_i)$}.
+		\item If a channel with identifier $\cid_i$ does not exists, then $\FF_{\GC}$ return 
+		$\bot$, and $\FF$ aborts.
+		\item Otherwise, $\FF_{\GC}$ returns the channel $\gamma_i$, where $\gamma_i.\cid = 
+		\cid_i$.
+		\item Ends the tuple $(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$, where $U_i$ replies 
+		either with $\top$ or $\bot$.
+		\item In the latter case, $\FF$ aborts.
+		\item Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] 
+		+ v_i$, and checks if $\gamma_i.\cash \geq v_i$.
+		\item If this is the case, $\FF$ adds $d_i = (\gamma_i,U_i,v_i,t_i)$ to $\DD[U_i]$, 
+		otherwise, $\FF$ aborts.
+		\item If $U_i = U_r$, then $\FF$ continues with the next iteration of the loop.
+		\item Otherwise, $\FF$ sends $(\mathsf{split}\mathsf{-req}, \NEWE{U_r}, v_i)$ to $U_i$ 
+		and $\sdv$. 
+		\item $U_i$ replies with $(\mathsf{split}, \{(\cid_i^1,U_i^1,v_i^1,t_i^1),\ldots,
+		(\cid_i^{k_i},U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$.
+		\item Then, for all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
+		$(\cid_i^j,U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
+	\end{itemize}
 	
 	\MESSAGEE{Using a queue we may end up having circles. I believe one can have them in practice too.}
 	
@@ -236,9 +234,13 @@ to $\UU$. Next, $\FF$ executes the following interactive protocol:
 %	$\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
 	
 	\item If $\VV[U_r] \neq v$, then $\FF$ aborts. Otherwise, for all $i \in \{|\UU|,\ldots,1\}$, 
-	$\FF$ queries $U_i$ from $\UU$ with $\HH[U_i]$, and notifies $\sdv$. Each user replies either 
-	with $\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$. 
-	Otherwise, it continues.
+	$\FF$ does the following
+	\begin{itemize}[label=-]
+		\item Queries $U_i$ from $\UU$ with $\HH[U_i]$, and notifies $\sdv$.
+		\item $U_i$ replies either with $\top$ or $\bot$.
+		\item If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$. 
+		\item Otherwise, $\FF$ continues.
+	\end{itemize}
 	
 %	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
 %	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, \bot)$, and creates a set 
@@ -248,15 +250,23 @@ to $\UU$. Next, $\FF$ executes the following interactive protocol:
 %	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, h_i^j)$, adds $d_i^j$ to $\LL$, and 
 %	sends $(\top, h_i^j)$ to $U_i$ and $\sdv$.
 	
-	\item For all $i \in \{|\UU|,\ldots,1\}$, $\FF$ checks whether $\RR[U_i] \subseteq \JJ$ for 
-	$U_i$ from $\UU$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, 
-	\HH[U_i])$ to $U_i$ and $\sdv$. Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ 
-	parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,v_j,t_j,h_j)$, creates $\vec{\theta} = 
-	(\theta_{U_i} := (\gamma_j.\cash - v_j, \theta_{U_i}.\varphi, \theta_{U_j} := (\gamma_j.
-	\cash + v_j, \theta_{U_j}.\varphi)$ \TODOP{How to write the conditions here?}, 
-	and queries $\FF_{\GC}$ with $(\mathsf{update},\gamma_j.\cid,\vec{\theta},t_j)$. If the 
-	call to $\FF_{\GC}$ succeeds, then $\FF$ sends $(\top, \HH[U_i])$ to $U_i$ and $\sdv$, 
-	otherwise it sends $(\bot, \HH[U_i])$ to $U_i$ and $\sdv$.
+	\item For all $i \in \{|\UU|,\ldots,1\}$, $\FF$ does the following 
+	\begin{itemize}[label=-]
+		\item Checks if $\RR[U_i] \subseteq \JJ$ for $U_i$ from $\UU$.
+		\item If this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, \HH[U_i])$ 
+		to $U_i$ and $\sdv$.
+		\item Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ does the following
+		\begin{itemize}[label=$\circ$]
+			\item Parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,v_j,t_j)$.
+			\item Creates $\vec{\theta} = (\theta_{U_i} := (\gamma_j.\cash - v_j, \theta_{U_i}.
+			\varphi, \theta_{U_j} := (\gamma_j.\cash + v_j, \theta_{U_j}.\varphi)$. \TODOP{How to write the conditions here?}
+			\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{update},\gamma_j.\cid,
+			\vec{\theta},t_j)$}.
+			\item If the call to $\FF_{\GC}$ succeeds, then $\FF$ sends $(\top, \HH[U_i])$ to 
+			$U_i$ and $\sdv$.
+			\item Otherwise, $\FF$ sends $(\bot, \HH[U_i])$ to $U_i$ and $\sdv$.
+		\end{itemize}
+	\end{itemize}
 \end{enumerate}
 }}
 
@@ -265,8 +275,8 @@ to $\UU$. Next, $\FF$ executes the following interactive protocol:
 \MESSAGEP{We wanted to \emph{merge} PCN and Lock functionalities, right?}
 \MESSAGEE{If we include the lock interfaces here, it means that the only way to realize a PCN is through a protocol that realizes the lock ideal functionality. Instead we can keep it more generic (like it is now) I guess.}
 
-\caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the $(\FF_{\BB}, \FF_{\anon}, 
-\FF_{\syn})$-hybrid model}
+\caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the $(\FF_{\GC}, \FF_{\mathsf{GDC}})$-
+hybrid model}
 \label{fig:ideal-mppcn}
 \end{figure*}
 
