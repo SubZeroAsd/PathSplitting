@@ -4,62 +4,70 @@
 
 \subsection{Intuition}
 
-We provide two constructions, namely single-trapdoor and multi-trapdoor. The main difference between the 
-two is that in the single-trapdoor construction only a single trapdoor is used, and no matter the number of 
-locks the receiver gets, all of them can be released using the same trapdoor. Hence, the receiver is not 
-forced to wait to receive all the locks intended for him. Whereas in the multi-trapdoor construction we 
-generate as many lock/trapdoor pairs as the amount of coins the sender wants to transfer to the receiver. 
-This means that if the sender wants to send $v$ coins, then he generates $v$ lock/trapdoor pairs, hence, 
-every lock has a unique trapdoor associated to it. Although, from a communication perspective multi-trapdoor 
-construction is more expensive compared to the single-trapdoor construction, it has a feature that allows us 
-to force the receiver to wait for all (or threshold of) the $v$ locks intended for him, before starting the 
-release of the locks. This feature is achieved as follows: the sender generates $v$ lock/trapdoor pairs, and
-two encryption keys $k_s, k_t$, encrypts the trapdoors using the key $k_t$ (therefore, creating a ciphertext 
-$c_t$), secret shares the key $k_t$ into $v$ shares ($[k_t]_1,\ldots,[k_t]_v$), 
-encrypts all these shares individually using the key $k_s$ (therefore, creating $v$ ciphertexts $(c_s^{(1)},
-\ldots,c_s^{(v)})$), includes these ciphertexts inside the $v$ locks that it previously created (one 
-ciphertext per lock), and sends $c_t$ and $k_s$ to the receiver. At this point the receiver has the key $k_s$, 
-which can be used to decrypt the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$, however, he doesn't have 
-the key $k_t$, which will allow him to decrypt the ciphertext $c_t$ that includes the trapdoors he needs 
-to release the locks. Since the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$ are now part of the locks, 
-they will eventually reach the receiver, and at that point the receiver can use the key $k_s$ it received 
-from the sender to decrypt these ciphertexts, and obtain the shares $[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
-Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the ciphertext $c_t$ 
-to obtain the trapdoors of the locks, and start releasing the locks. Hence, the receiver needs to wait for 
-all the $v$ locks to reach him, so that he can decrypt all the ciphertexts that are part of the locks and 
-reconstruct the key $k_t$. Instead of forcing the receiver to wait for all the $v$ locks, we can also force 
-him to wait for a subset of size $t$ of them using a $t$-out-of-$v$ secret sharing. The locking and releasing 
-mechanisms are identical in both the single-trapdoor and multi-trapdoor constructions, and are based on pairings. 
-The differences between the two constructions are how the setup is performed by the sender, and how the release 
-of the locks from receiver (extraction phase) happens.
+We provide two constructions, namely single-trapdoor and multi-trapdoor. The main difference 
+between the two is that in the single-trapdoor construction only a single trapdoor is used, and 
+no matter the number of locks the receiver gets, all of them can be released using the same 
+trapdoor. Hence, the receiver is not forced to wait to receive all the locks intended for him. 
+Whereas in the multi-trapdoor construction we generate as many lock/trapdoor pairs as the amount 
+of coins the sender wants to transfer to the receiver. This means that if the sender wants to 
+send $v$ coins, then he generates $v$ lock/trapdoor pairs, hence, every lock has a unique 
+trapdoor associated to it. Although, from a communication perspective multi-trapdoor 
+construction is more expensive compared to the single-trapdoor construction, it has a feature 
+that allows us to force the receiver to wait for all (or threshold of) the $v$ locks intended for 
+him, before starting the release of the locks. This feature is achieved as follows: the sender 
+generates $v$ lock/trapdoor pairs, and two encryption keys $k_s, k_t$, encrypts the trapdoors 
+using the key $k_t$ (therefore, creating a ciphertext $c_t$), secret shares the key $k_t$ into 
+$v$ shares ($[k_t]_1,\ldots,[k_t]_v$), encrypts all these shares individually using the key $k_s$ 
+(therefore, creating $v$ ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$), includes these ciphertexts 
+inside the $v$ locks that it previously created (one ciphertext per lock), and sends $c_t$ and 
+$k_s$ to the receiver. At this point the receiver has the key $k_s$, which can be used to decrypt 
+the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$, however, he doesn't have the key $k_t$, 
+which will allow him to decrypt the ciphertext $c_t$ that includes the trapdoors he needs 
+to release the locks. Since the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$ are now part of 
+the locks, they will eventually reach the receiver, and at that point the receiver can use the 
+key $k_s$ it received from the sender to decrypt these ciphertexts, and obtain the shares $
+[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
+Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the 
+ciphertext $c_t$ to obtain the trapdoors of the locks, and start releasing the locks. Hence, the 
+receiver needs to wait for all the $v$ locks to reach him, so that he can decrypt all the 
+ciphertexts that are part of the locks and reconstruct the key $k_t$. Instead of forcing the 
+receiver to wait for all the $v$ locks, we can also force him to wait for a subset of size $t$ of 
+them using a $t$-out-of-$v$ secret sharing. The locking and releasing mechanisms are identical in 
+both the single-trapdoor and multi-trapdoor constructions, and are based on pairings. 
+The differences between the two constructions are how the setup is performed by the sender, and 
+how the release of the locks from receiver (extraction phase) happens.
 
 \subsection{Cryptographic Building Blocks}
 
-\paragraph{Bilinear Groups} Let $\BilGen$ be a $\ppt$ algorithm that on input a security parameter 
-$1^\lambda$ outputs $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$, where 
-$\GG_1, \GG_2$ and $\GG_T$ are groups of prime order $q$ with bilinear map $e \colon \GG_1 \times 
-\GG_2 \to \GG_T$, and generators $g_i \in \GG_i$ for $i \in \{1,2,T\}$. We consider Type-III bilinear 
-groups as they represent the state-of-the-art regarding the efficiency and security.
+\paragraph{Bilinear Groups} Let $\BilGen$ be a $\ppt$ algorithm that on input a security 
+parameter $1^\lambda$ outputs $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets 
+\BilGen(1^\lambda)$, where $\GG_1, \GG_2$ and $\GG_T$ are groups of prime order $q$ with 
+bilinear map $e \colon \GG_1 \times \GG_2 \to \GG_T$, and generators $g_i \in \GG_i$ for $i \in 
+\{1,2,T\}$. We consider Type-III bilinear groups as they represent the state-of-the-art regarding 
+the efficiency and security.
 
-\paragraph{Universal Re-encryption Scheme} Universal re-encryption allows to re-encrypt without knowledge 
-of the public key under which a ciphertext was computed. Therefore, one can use it to re-randomize an input 
-ciphertext, such that the encrypted value remains the same, but the output ciphertext looks different than 
-the input ciphertext. Universal re-encryption scheme is composed of the algorithms $(\kgen, \enc, \dec, \renc)$, 
-where $(\sk, \pk) \gets \kgen(1^\lambda)$, $c \gets \enc(\pk, m)$, $m \gets \dec(\sk, c)$, and 
-$c' \gets \renc(c)$, for a secret/public key pair $(\sk, \pk)$, a message $m$, a ciphertext $c$, and a 
-randomized ciphertext $c'$. Golle et al. \cite{gjjs} showed how to build such a primitive using the ElGamal 
-encryption scheme. This is achieved by appending to a standard ElGamal ciphertext a second ciphertext on 
-the identity element. Since ElGamal is homomorphic, one can use the second ciphertext to alter the encryption 
-factor in the first ciphertext. Hence, one does not need knowledge of the public key in the re-encryption 
-operation. The scheme of Golle et al. is defined as follows. $\kgen$ on input the security parameter $1^\lambda$, 
-samples a random $x \sample \ZZ_q$, computes $y \gets g^x$, and outputs $\sk := x, \pk := y$. $\enc$ on input 
-a message $m$ and a public key $y$, samples a random encryption factor $r := (k_0, k_1) \sample \ZZ_q^2$, and 
-outputs $c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)] := [(my^{k_0},g^{k_0});(y^{k_1},g^{k_1})]$. $\dec$ on 
-input a secret key $x$ and a ciphertext $c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)]$, computes $m_0 \gets 
-\alpha_0 / \beta_0^x$ and $m_1 \gets \alpha_1 / \beta_1^x$. If $m_1 = 1$, then it outputs $m := m_0$. Otherwise, 
-the decryption fails, and it outputs $\bot$. $\renc$ on input a ciphertext $c := [(\alpha_0,\beta_0); 
-(\alpha_1,\beta_1)]$, samples a random re-encryption factor $r' := (k_0',k_1') \sample \ZZ_q^2$, and outputs 
-a randomized ciphertext $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
+\paragraph{Universal Re-encryption Scheme} Universal re-encryption allows to re-encrypt without 
+knowledge of the public key under which a ciphertext was computed. Therefore, one can use it to 
+re-randomize an input ciphertext, such that the encrypted value remains the same, but the output 
+ciphertext looks different than the input ciphertext. Universal re-encryption scheme is composed 
+of the algorithms $(\kgen, \enc, \dec, \renc)$, where $(\sk, \pk) \gets \kgen(1^\lambda)$, 
+$c \gets \enc(\pk, m)$, $m \gets \dec(\sk, c)$, and $c' \gets \renc(c)$, for a secret/public key 
+pair $(\sk, \pk)$, a message $m$, a ciphertext $c$, and a randomized ciphertext $c'$. 
+Golle et al. \cite{gjjs} showed how to build such a primitive using the ElGamal encryption 
+scheme. This is achieved by appending to a standard ElGamal ciphertext a second ciphertext on 
+the identity element. Since ElGamal is homomorphic, one can use the second ciphertext to alter 
+the encryption factor in the first ciphertext. Hence, one does not need knowledge of the public 
+key in the re-encryption operation. The scheme of Golle et al. is defined as follows. $\kgen$ on 
+input the security parameter $1^\lambda$, samples a random $x \sample \ZZ_q$, computes $y \gets 
+g^x$, and outputs $\sk := x, \pk := y$. $\enc$ on input a message $m$ and a public key $y$, 
+samples a random encryption factor $r := (k_0, k_1) \sample \ZZ_q^2$, and outputs 
+$c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)] := [(my^{k_0},g^{k_0});(y^{k_1},g^{k_1})]$. $\dec$ 
+on input a secret key $x$ and a ciphertext $c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)]$, 
+computes $m_0 \gets \alpha_0 / \beta_0^x$ and $m_1 \gets \alpha_1 / \beta_1^x$. If $m_1 = 1$, 
+then it outputs $m := m_0$. Otherwise, the decryption fails, and it outputs $\bot$. $\renc$ on 
+input a ciphertext $c := [(\alpha_0,\beta_0); (\alpha_1,\beta_1)]$, samples a random 
+re-encryption factor $r' := (k_0',k_1') \sample \ZZ_q^2$, and outputs a randomized ciphertext 
+$c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \beta_0\beta_1^{k_0'});(\alpha_1^{k_1'},\beta_1^{k_1'})]$.
 
 \subsection{Single-Trapdoor Construction}
