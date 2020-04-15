@@ -11,28 +11,37 @@ framework of Canetti \cite{canetti}.
 \paragraph{Attacker Model}
 We model parties as interactive Turing machines (ITMs), which communicate with a trusted 
 functionality $\FF$ via secure and authenticated communication channels. We model the 
-adversary $\sdv$ as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
+adversary $\adv$ as a $\ppt$ machine that has access to an interface $\corrupt(\cdot)$, 
 which takes as input a party identifier $P$ and provides the attacker with the internal 
 state of $P$. From that point onward, all subsequent incoming and outgoing communication 
-of $P$ is routed through $\sdv$. We consider the static corruption model, that is, the 
+of $P$ is routed through $\adv$. We consider the static corruption model, that is, the 
 adversary is required to commit to the identifiers of the parties it wishes to corrupt 
 ahead of time.
 
 \paragraph{Communication Model}
-Communication happens through the secure transmission functionality $\FF_{\smt}$, as 
-defined in \cite{canetti}, which informs the adversary whenever a communication between 
-any two parties happens, and allows the adversary to delay the delivery of the messages 
-arbitrarily. However, the adversary can neither read nor change the content of the messages.
+%Communication happens through the secure transmission functionality $\FF_{\smt}$, as 
+%defined in \cite{canetti}, which informs the adversary whenever a communication between 
+%any two parties happens, and allows the adversary to delay the delivery of the messages 
+%arbitrarily. However, the adversary can neither read nor change the content of the messages.
 
 We consider a synchronous communication network, where communication proceeds in discrete 
-rounds, as defined in \cite{kmtz} and denoted here as $\FF_{\syn}$ \MESSAGEP{We might want to use $\FF_{\textit{GDC}}$ instead from \url{https://eprint.iacr.org/2019/571.pdf}. The difference is: "In contrast to [19]($\FF_{\syn}$), we treat the clock functionality  as  a global ideal  functionality  using  the global  UC  (GUC) model"} \MESSAGEE{Sure, we can either use that one for time or stick to using the blockchain (again defined in GUC) as shown below. I guess we just need to decide what "time" really means for us. What I see from this paper is that the time they care about is for synchronous round communication, but we mainly use the time for timeouts of the transactions (of course we also assume there is some synchronous communication happening between parties). Hence, it feels to me that it makes more sense to use some kind of timing based on a blockchain for transactions. Or, we have to understand what exactly their time encompasses here. Can we use their clock to also model the timeouts of transactions?}. The parties are 
-always aware of the current round, and if a party $P$ sends a message in round $r$, 
-the recipient receives the message in the beginning of round $r + 1$. The 
-adversary can change the order of messages, but we assume that the order of messages 
-between honest parties cannot be changed (which can easily be realized using message 
-counters). For simplicity, we assume that computation is instantaneous.
+rounds. We follow \cite{kmtz}, which in turn follows \cite{mpvsc}, and formalize the notion of 
+rounds via an ideal functionality $\FF_{\mathsf{clock}}$, which represents the clock. The ideal 
+functionality requires all honest parties to indicate that they are ready to proceed to the next 
+round before the clock is ticked. Similar to \cite{mpvsc} we treat the clock functionality as a 
+global ideal functionality defined in global UC (GUC) model. This implies that all the parties 
+are aware of the given round. 
 
-\TODOE{Figure out whether we actually need $\FF_{\anon}$ or not (currently we do not use it).}
+We assume the parties are connected via authenticated communication channels with guaranteed 
+delivery of exactly one round. Hence, if a party $P$ sends a message $m$ to party $Q$ in round 
+$r$, party $Q$ receives the message in the beginning of round $r + 1$. Furthermore, $Q$ is sure 
+that the message was sent by $P$. The adversary can change the order of messages \MESSAGEE{also the content if we do not use $\FF_\smt$} that were sent in the same round, 
+but it cannot modify, delay or drop messages sent between parties, or it cannot insert a new 
+message. For simplicity, we assume that computation is instantaneous. The assumptions on the 
+communication channels are formalized as an ideal functionality $\FF_{\mathsf{GCD}}$, as defined 
+in \cite{mpvsc}.
+
+\TODOE{Figure out whether we actually need $\FF_{\smt}$ and $\FF_{\anon}$ or not for the sake of privacy (currently we do not use them).}
 %\MESSAGEP{Do we really need $\FF_{\anon}$?}
 %\MESSAGEE{I think you use anonymous communication channel in your constructions in the CCS paper when senders sends data to the intermediaries and the receiver. Since the sender knows and prepares the whole path, you need to use it there to achieve any meaningful anonymity at all. However, in our case the sender does not know the whole path, so only talks with the receiver and its direct neighbors. Therefore, we may not need to use anonymous communication channel. But, we need to further discuss this to clarify what form of anonymity we are aiming for and achieving and whether we need anonymous communication channels to realize them.}
 %Furthermore, we assume existence of an anonymous communication channel as defined in 
@@ -42,13 +51,19 @@ counters). For simplicity, we assume that computation is instantaneous.
 %$\FF_{\anon}$.
 
 \paragraph{Ledger Functionality}
-We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
-The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
-store, read and update the balance of every user. It is defined in the 
-global UC (GUC) model \cite{guc}, since it provides data that should be globally accessible, 
-and it can be updated by multiple instances of our ideal functionality or by other protocols 
-simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
-number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
+We make use of the generalized payment channel functionality defined in 
+\MESSAGEE{Generalized Bitcoin-Compatible Channels paper}, which we denote here as 
+$\FF_{\mathsf{GC}}$. This ideal functionality uses internally a ledger functionality, 
+denoted as $\LL$, and defined in GUC model. $\LL$ maintains a transaction set $\mathtt{TX}$, 
+which stores all the transactions that have happened.
+
+%We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
+%The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
+%store, read and update the balance of every user. It is defined in the 
+%global UC (GUC) model \cite{guc}, since it provides data that should be globally accessible, 
+%and it can be updated by multiple instances of our ideal functionality or by other protocols 
+%simultaneously. We denote the number of entries in $\BB$ as $|\BB|$, and we model time as the 
+%number of entries of the blockchain $\BB$ (i.e., time $t = |\BB|$).
 
 \TODOE{Replace the ledger functionality with a more appropriate payment channel functionality.}
 
@@ -74,8 +89,8 @@ indistinguishable.
 \label{sec:mppcn}
 
 In this section we define an ideal functionality $\FF_{\mathsf{MPPCN}}$ for MPPCNs. 
-$\FF_{\mathsf{MPPCN}}$ works in interaction with a universe of users $\mathbb{U}$, which 
-corresponds to the users of the PCN. To ease the exposition, we assume that there is a 
+$\FF_{\mathsf{MPPCN}}$ works in interaction with a universe of users $\mathbb{U}$, and with an 
+adversary $\sdv$. To ease the exposition, we assume that there is a 
 well-known ordering of the users in a sense that a user $U_i$ can only transact with user $U_j$ 
 if $j > i$ for $i,j \in \NN$. For simplicity, we only consider unidirectional channels, 
 however, we note that our functionality can be easily extended to support bidirectional 
