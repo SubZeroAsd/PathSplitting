@@ -1,0 +1,62 @@
+\section{Routing}
+\label{sec:routing}
+
+\begin{figure*}[htb]
+	\begin{center}	
+		\textbf{Variables and functions:}
+		
+		\begin{tabular}{r l}
+			$\Graph$ & the payment-channel network graph. $\nodes$ is the set of nodes and $\edges$ is the set of channels\\
+			$\LM$ & set of landmarks\\
+			$\Corrupted$ & set of corrupted nodes\\
+			$\initflag$ & Flag to initialize the functionality. Initially $\initflag = \bot$\\
+			$\distfun$ & function to compute the distance between the identifiers of two nodes\\
+			$\nodeid{\node}{\nodelandmark}$ & identifier of node $\node$ in the tree rooted at landmark $\nodelandmark$ 
+		\end{tabular}
+	\framebox[\textwidth]{
+		\begin{minipage}[t]{0.3\textwidth}
+		\procedure[mode=text]{Corrupt$(\node)$}{
+		Upon invocation by $\sdv$: \\
+		\quad If $\initflag = \bot$ then add $\node$ to $\Corrupted$
+		}
+		\procedure[mode=text]{InitDone$(\distfun)$}{
+		Upon invocation by $\sdv$:\\
+		\quad Store $\distfun$\\
+		\quad Set $\initflag := \top$
+		}	
+		\procedure[mode=text]{AddChannel$(\node_j)$}{
+		Upon invocation by $\node_i$:\\
+		\quad Add $\node_i$ and $\node_j$ to $\nodes$\\
+		\quad Add $(\node_i, \node_j)$ to $\edges$\\
+		\quad If $\node_i \in \Corrupted$ or $\node_j \in \Corrupted$ then $\send((\node_i, \node_j))$ to $\sdv$ 
+		}
+		\procedure[mode=text]{AddLandmark$()$}{
+		Upon invocation by $\node_i$:\\
+		\quad Add $\node_i$ to $\sdv$\\
+		\quad If $\node_i \in \Corrupted$ $\send(\node_i)$ to $\sdv$
+		}			
+		\end{minipage}
+		\begin{minipage}[t]{0.65\textwidth}
+		\procedure[mode=text]{SetIdentifiers$()$}{
+		Upon invocation by $\nodelandmark \in \LM$:\\
+		\quad Enqueue $\nodelandmark$ in $\QQ$\\
+		\quad While $\QQ$ is not empty do:\\
+		\quad \quad Dequeue $\node$ from $\QQ$\\
+		\quad \quad For every $\node'$ neighbor of $\node$ do:\\
+		\quad \quad \quad $\send(\nodelandmark, \node')$ to $\node$\\
+		\quad \quad \quad $\receive(b)$ from $\node$\\
+		\quad \quad \quad If $b = \top$ then\\
+		\quad \quad \quad \quad If $\nodeid{\node'}{\nodelandmark}$ is not set yet then:\\
+		\quad \quad \quad \quad \quad Compute random number $r$\\
+		\quad 
+		\quad \quad \quad \quad Set $\nodeid{\node'}{\nodelandmark} := \textit{concatenate}(\nodeid{\node}{\nodelandmark}, r)$\\
+		\quad \quad \quad \quad \quad If $\node' \in \Corrupted$ then $\send(\nodeid{\node'}{\nodelandmark})$ to $\sdv$\\
+		\quad \quad \quad \quad Enqueue $\node'$ in $\QQ$
+		}
+		\end{minipage}
+	}
+	\end{center}
+	
+	\caption{Ideal functionality for routing}
+	\label{fig:ideal-routing}
+\end{figure*}
