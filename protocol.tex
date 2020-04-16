@@ -70,6 +70,95 @@ re-encryption factor $r' := (k_0',k_1') \sample \ZZ_q^2$, and outputs a randomiz
 $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \beta_0\beta_1^{k_0'});(\alpha_1^{k_1'},\beta_1^{k_1'})]$.
 
+\subsection{PCN Construction}
+
+\begin{figure*}[tb]
+\centering
+\fbox{\procedure{}{
+	\< \mathsf{lock}_{U_i}(m): \< \\[][\hline]
+	\< \text{Parse } m \text{ as } (\vec{s},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\}) \< \\ [-0.15\baselineskip][]
+	\< \text{Initialize } \vec{w} = \emptyset \< \\ [-0.15\baselineskip][]
+	\< \pcfor j \pcin \{1..k_i\} \pcdo \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{get}\mathsf{-channel},\cid_i^j) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Receive } \gamma_j \text{ from } \FF_{\GC} \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcif \gamma_j = \bot \textbf{ or } \gamma_j.\cash < v_i^j \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][] 
+	\< \pcind \pcelse \< \\ [-0.15\baselineskip][] 
+	\< \pcind \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{lock},\vec{s},U_i^j,v_i^j,t_i^j) \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Receive } (\vec{w}_i^j,\vec{s}_i^j) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Set } \vec{w} = \vec{w} \cup \vec{w}_i^j \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Send } (\mathsf{lock},U_i,(\vec{s}_i^j,v_i^j)) \text{ to } U_i^j \< \\ [-0.15\baselineskip][]
+	\< \pcreturn \vec{w} \<
+}}
+
+\caption{The $\mathsf{lock}$ auxiliary function.}
+\label{fig:mppcn-sender}
+\end{figure*}
+
+
+\begin{figure*}[tb]
+\centering
+\fbox{\procedure{}{
+	\< \mathsf{pay}_{U_s}(m): \< \\[][\hline]
+	\< \text{Parse } m \text{ as } (v, U_r,\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\}) \< \\ [-0.15\baselineskip][]
+	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{setup},v,U_r) \< \\ [-0.15\baselineskip][]
+	\< \text{Receive } (\vec{\td}, \vec{s}) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
+	\< \text{Send } (\mathsf{setup}, U_s, \vec{\td}) \text{ to } U_r \< \\ [-0.15\baselineskip][]
+	\< \text{Compute } \vec{w}_s \gets \mathsf{lock}_{U_s}((\vec{s},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
+	\< \text{Store } \vec{w}_s
+}}
+
+\caption{The $\mathsf{pay}$ routine in MPPCN for the sender.}
+\label{fig:mppcn-sender}
+\end{figure*}
+
+\begin{figure*}[tb]
+\centering
+\fbox{\procedure{}{
+	\< \mathsf{pay}_{U_r}(m): \< \\[][\hline]
+	\< \text{Parse } m \text{ as } (\textit{operation}, U^*, m^*) \< \\ [-0.15\baselineskip][]
+	\< \pcif \textit{operation} = \mathsf{setup} \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Parse } m^* \text{ as } \vec{\td} \text{ and store } \vec{\td} \< \\ [-0.15\baselineskip][]
+	\< \pcelse \pcif \textit{operation} = \mathsf{lock} \textbf{ and } \text{has stored } \vec{\td} \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Parse } m^* \text{ as } \vec{s} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{extract},\vec{s},\vec{\td}) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Receive } \vec{k} \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Send } (\mathsf{release},\vec{k}) \text{ to } U^* \< \\ [-0.15\baselineskip][]
+	\< \pcelse \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Send } (\mathsf{abort}, \bot) \text{ to } U^* \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcabort \< 
+}}
+
+\caption{The $\mathsf{pay}$ routine in MPPCN for the receiver.}
+\label{fig:mppcn-receiver}
+\end{figure*}
+
+\begin{figure*}[tb]
+\centering
+\fbox{\procedure{}{
+	\< \mathsf{pay}_{U_i}(m): \< \\[][\hline]
+	\< \text{Parse } m \text{ as } (\textit{operation}, U^*, m^*) \< \\ [-0.15\baselineskip][]
+	\< \pcif \textit{operation} = \mathsf{lock} \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Parse } m^* \text{ as } (\vec{s}_i,v_i) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \MESSAGEE{routing ideal functionality} \text{ on } (\mathsf{get}\mathsf{-split},\vec{s}_i,v_i) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Receive } \{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\} \text{ from } \MESSAGEE{routing ideal functionality} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Compute } \vec{w} \gets \mathsf{lock}_{U_i}((\vec{s},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\})) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Set } \vec{w}_i = \vec{w}_i \cup \vec{w} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Set } \mathcal{L} = \mathcal{L} \cup \{U^*\} \text{ and } \mathcal{R} = \mathcal{R} \cup \{U_i^1,\ldots,U_i^{k_i}\}  \< \\ [-0.15\baselineskip][]
+	\< \pcelse \pcif \textit{operation} = \mathsf{release} \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Parse } m^* \text{ as } \vec{k} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{release},\vec{k},\vec{w}_i) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Receive } \vec{k}_i \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Send } (\mathsf{release},\vec{k}_i) \text{ to every user in } \mathcal{L} \< \\ [-0.15\baselineskip][]
+	\< \pcelse \pcif \textit{operation} = \mathsf{abort} \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Send } (\mathsf{abort},\bot) \text{ to every user in } \mathcal{L} \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcabort
+}}
+
+\caption{The $\mathsf{pay}$ routine in MPPCN for the intermediary.}
+\label{fig:mppcn-intermediary}
+\end{figure*}
+
 \subsection{Single-Trapdoor Construction}
 
 \begin{figure*}[htb]
