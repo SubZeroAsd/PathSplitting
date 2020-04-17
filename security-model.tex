@@ -372,57 +372,141 @@ paths.
 
 For ease of exposition we also define several functions that extract or update information of 
 a lock given its identifier as input: $\getStatus(\cdot)$ returns the status of the lock, 
-$\getLeft(\cdot)$ and $\getRight(\cdot)$ return the left and right user involved with the 
+$\getLeft(\cdot)$/$\getRight(\cdot)$ return the left/right user involved with the 
 lock, $\getNextLock(\cdot)$ returns the identifier of the next lock, $\setRightUser(\cdot, U)$ 
-sets the right user of the lock to a user $U$, $\setRightLock(\cdot, \lid)$ sets the right lock 
-of the lock to $\lid$, $\updateStatus(\cdot, f)$ sets the status of the lock to a flag $f$, 
-$\generateTrapdoor(\cdot)$ creates a trapdoor associated to the lock, and $\validateTrapdoors
-((\cdots), (\td_1,\ldots,\td_m))$ checks that the trapdoors are associated to the given locks 
-by recursively traversing the path of each given lock.
+sets the right user of the lock to a user $U$, $\setRightLock(\cdot, \lid^*)$ sets the right lock 
+of the given lock to $\lid^*$, $\updateStatus(\cdot, f)$ sets the status of the lock to a flag 
+$f$, $\generateTrapdoor(\cdot)$ creates a trapdoor associated to the lock, and 
+$\validateTrapdoors((\cdots), (\td_1,\ldots,\td_m))$ checks that the trapdoors are associated 
+to the given locks by recursively traversing the path of each given lock.
+
+%\begin{figure*}[!h]
+%	\centering
+%	
+%	\fbox{
+%		\begin{minipage}[t]{0.50\textwidth}
+%			\procedure[mode=text]{$\Setup(\sid, v, (U_0,U_n))$}{
+%				Upon invocation by $U_0$:  												\\
+%				$\forall i \in [1,v]$:													\\
+%				\quad $\lid_i \sample \{0, 1\}^\lambda$									\\
+%				\quad $\td_i \gets \generateTrapdoor(\lid_i)$							\\
+%				\quad insert $(\lid_i, \td_i, U_0, \bot, \Init, \bot)$ to $\LL$			\\
+%				send$_\anon$ $(\sid, ((\lid_1, \Init),\ldots,(\lid_v, \Init)))$ to $U_0$ and 
+%				$\sdv$																	\\
+%				send$_\anon$ $(\sid, v, (\td_1,\ldots,\td_v))$ to $U_n$ and $\sdv$
+%			}
+%			\\ \\
+%			\procedure[mode=text]{$\Release(\sid, (\lid_1,\ldots,\lid_k))$}{
+%				Upon invocation by $U_i$: 												\\
+%				$\forall i \in [1,k]$: 													\\
+%				\quad if $U_i = U_n$ or $\getRight(\lid_i) \neq U_i$ or 
+%				$\getStatus(\lid_i) \neq \Lock$ or $\getStatus(\getNextLock(\lid_i)) 
+%				\neq \Rel$	then send$_\smt$ $(\sid, \lid_i, \bot)$ to $U_i$	 and $\sdv$	\\
+%				\quad else:																\\
+%				\qquad $\updateStatus(\lid_i, \Rel)$										\\
+%				\qquad send$_\smt$ $(\sid, \lid_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
+%			}
+%			\\
+%			\procedure[mode=text]{$\Extract(\sid, (\lid_1,\ldots,\lid_k),(\td_1,\ldots,\td_v))$}{
+%				Upon invocation by $U_n$:												\\
+%				$\forall i \in [1,k]$: if $\getRight(\lid_i) \neq U_n$ or 
+%				$\getStatus(\lid_i) \neq \Lock$ or 										\\
+%				$\getNextLock(\lid_i) \neq \bot$ then abort								\\
+%				if \textcolor{blue}{$k \neq v$ or} $\validateTrapdoors
+%				((\lid_1,\ldots,\lid_k),(\td_1,\ldots,\td_v)) = \bot$ then abort			\\
+%				$\forall i \in [1,k]$: 													\\
+%				\quad $\updateStatus(\lid_i, \Rel)$										\\
+%				\quad send$_\smt$ $(\sid, \lid_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
+%			}
+%		\end{minipage}
+%		\begin{minipage}[t]{0.45\textwidth}
+%			\procedure[mode=text]{$\Lock(\sid, (\lid_1,\ldots,\lid_k), 
+%				\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\})$}{
+%				Upon invocation by $U_i$: 													\\
+%				$\forall j \in [1,k]$: if $U_i \neq U_0$ and $\getStatus(\lid_j) \neq 
+%				\Lock$ and $\getRight(\lid_j) \neq U_i$ the abort							\\
+%				\textcolor{blue}{if $\sum_{i=1}^m p_{j_i} > k$ then abort}					\\
+%				set $\ell = (\lid_1,\ldots,\lid_k)$											\\
+%				$\forall e \in [1,m]$:														\\
+%				\quad $\forall a \in [1,p_{j_e}]$:											\\
+%				\qquad $\lid' \sample \{0,1\}^{\lambda}$										\\
+%				\qquad sample $\lid^* \sample \ell$ and set $\ell = \ell \setminus 
+%				\{\lid^*\}$																	\\
+%				\qquad if $U_i = U_0$: 														\\
+%				\qquad \quad $\setRightUser(\lid^*, U_{j_e})$								\\
+%				\qquad \quad set $\lid' = \lid^*$											\\
+%				\qquad else: 																\\
+%				\qquad \quad insert $(\lid', \bot, U_i, U_{j_e}, \Init, \bot)$ into $\LL$	\\
+%				\qquad \quad $\setRightLock(\lid^*, \lid')$									\\
+%				\qquad send$_\smt$ $(\sid, \lid', \Lock)$ to $\getRight(\lid')$ and $\sdv$	\\
+%				\qquad receive$_\smt$ $(\sid, b)$ from $\getRight(\lid')$					\\
+%				\qquad if $b = \bot$ then send$_\smt$ $(\sid, \getRight(\lid'), \bot)$ 
+%				to $U_i$	 and $\sdv$															\\
+%				\qquad else:																	\\
+%				\qquad \quad $\updateStatus(\lid', \Lock)$									\\
+%				\qquad \quad send$_\smt$ $(\sid, \lid', \Lock)$ to $U_i, \getRight(\lid')$ and 
+%				$\sdv$
+%			}
+%			\\
+%			\procedure[mode=text]{$\mathsf{GetStatus}(\sid, \lid)$}{
+%				Upon invocation by $U_i$:												\\
+%				%if $\getLeft(\lid) \neq U_i$ or $\getRight(\lid) \neq U_i$ then abort	\\
+%				send$_\smt$ $(\sid, \lid, \getStatus(\lid))$ to $U_i$
+%			}
+%		\end{minipage}
+%	}
+%	
+%	\caption{Ideal functionality $\FF_{\mathsf{MPMHL}}$ in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.}
+%	\label{fig:ideal-mpmhl}
+%\end{figure*}
 
 \begin{figure*}[!h]
 	\centering
 	
 	\fbox{
 		\begin{minipage}[t]{0.50\textwidth}
-			\procedure[mode=text]{$\Setup(\sid, v, (U_0,U_n))$}{
-				Upon invocation by $U_0$:  												\\
-				$\forall i \in [1,v]$:													\\
-				\quad $\lid_i \sample \{0, 1\}^\lambda$									\\
+			\procedure[mode=text]{$\Setup(U_r,v):$}{
+				Upon invocation by $U_s$:  												\\
+				Initialize empty vectors $\vec{\ell}$ and $\vec{\td}$					\\
+				Set $j = 1$ \textcolor{blue}{(or $j = v$ in multi-trapdoor case)}		\\
+				$\forall i \in [1,j]$:													\\
+				\quad $\lid_i \gets \mathsf{generateLock}(1^\lambda)$					\\
 				\quad $\td_i \gets \generateTrapdoor(\lid_i)$							\\
-				\quad insert $(\lid_i, \td_i, U_0, \bot, \Init, \bot)$ to $\LL$			\\
-				send$_\anon$ $(\sid, ((\lid_1, \Init),\ldots,(\lid_v, \Init)))$ to $U_0$ and 
-				$\sdv$																	\\
-				send$_\anon$ $(\sid, v, (\td_1,\ldots,\td_v))$ to $U_n$ and $\sdv$
+				\quad add $\lid_i$ to $\vec{\ell}$ and $\td_i$ to $\vec{\td}$			\\
+				\quad insert $(\lid_i, \td_i, U_s, \bot, \Init, \bot)$ to $\LL$			\\
+				send $\vec{\ell}$ to $U_s$ and $\sdv$									\\
+				send $(v, \vec{\td})$ via $\FF_{\smt}$ to $U_r$ and $\sdv$
 			}
 			\\ \\
-			\procedure[mode=text]{$\Release(\sid, (\lid_1,\ldots,\lid_k))$}{
+			\procedure[mode=text]{$\Release(\vec{k},\vec{w})$}{
 				Upon invocation by $U_i$: 												\\
-				$\forall i \in [1,k]$: 													\\
-				\quad if $U_i = U_n$ or $\getRight(\lid_i) \neq U_i$ or 
+				Parse $\vec{k}$ as $(k_1,\ldots,k_j)$									\\
+				$\forall i \in [1,j]$: 													\\
+				\quad if $U_i = U_r$ or $\getRight(\lid_i) \neq U_i$ or 
 				$\getStatus(\lid_i) \neq \Lock$ or $\getStatus(\getNextLock(\lid_i)) 
-				\neq \Rel$	then send$_\smt$ $(\sid, \lid_i, \bot)$ to $U_i$	 and $\sdv$	\\
+				\neq \Rel$	then send $(\lid_i, \bot)$ to $U_i$ and $\sdv$				\\
 				\quad else:																\\
-				\qquad $\updateStatus(\lid_i, \Rel)$										\\
-				\qquad send$_\smt$ $(\sid, \lid_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
+				\qquad $k_i \gets \updateStatus(\lid_i, \vec{w}, \Rel)$					\\
+				\qquad send $(\lid_i, k_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
 			}
 			\\
-			\procedure[mode=text]{$\Extract(\sid, (\lid_1,\ldots,\lid_k),(\td_1,\ldots,\td_v))$}{
-				Upon invocation by $U_n$:												\\
-				$\forall i \in [1,k]$: if $\getRight(\lid_i) \neq U_n$ or 
+			\procedure[mode=text]{$\Extract(\vec{\ell},\vec{\td})$}{
+				Upon invocation by $U_r$:												\\
+				Parse $\vec{\ell}$ as $(\lid_1,\ldots,\lid_j)$ and $\vec{\td}$ as $(\td_1,\ldots,\td_v)$																\\
+				$\forall i \in [1,j]$: if $\getRight(\lid_i) \neq U_r$ or 
 				$\getStatus(\lid_i) \neq \Lock$ or 										\\
 				$\getNextLock(\lid_i) \neq \bot$ then abort								\\
-				if \textcolor{blue}{$k \neq v$ or} $\validateTrapdoors
-				((\lid_1,\ldots,\lid_k),(\td_1,\ldots,\td_v)) = \bot$ then abort			\\
-				$\forall i \in [1,k]$: 													\\
-				\quad $\updateStatus(\lid_i, \Rel)$										\\
-				\quad send$_\smt$ $(\sid, \lid_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
+				if \textcolor{blue}{$j \neq v$ or} $\validateTrapdoors
+				((\lid_1,\ldots,\lid_j),(\td_1,\ldots,\td_v)) = \bot$ then abort			\\
+				$\forall i \in [1,j]$: 													\\
+				\quad $k_i \gets \updateStatus(\lid_i, \vec{\td}, \Rel)$					\\
+				\quad send$_\smt$ $(\lid_i, k_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
 			}
 		\end{minipage}
 		\begin{minipage}[t]{0.45\textwidth}
-			\procedure[mode=text]{$\Lock(\sid, (\lid_1,\ldots,\lid_k), 
-				\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\})$}{
+			\procedure[mode=text]{$\Lock(\vec{\ell}, U_k, v_k)$}{
 				Upon invocation by $U_i$: 													\\
+				Parse $\vec{\ell}$ as $(\lid_1,\ldots,\lid_j)$								\\
 				$\forall j \in [1,k]$: if $U_i \neq U_0$ and $\getStatus(\lid_j) \neq 
 				\Lock$ and $\getRight(\lid_j) \neq U_i$ the abort							\\
 				\textcolor{blue}{if $\sum_{i=1}^m p_{j_i} > k$ then abort}					\\
@@ -438,20 +522,20 @@ by recursively traversing the path of each given lock.
 				\qquad else: 																\\
 				\qquad \quad insert $(\lid', \bot, U_i, U_{j_e}, \Init, \bot)$ into $\LL$	\\
 				\qquad \quad $\setRightLock(\lid^*, \lid')$									\\
-				\qquad send$_\smt$ $(\sid, \lid', \Lock)$ to $\getRight(\lid')$ and $\sdv$	\\
-				\qquad receive$_\smt$ $(\sid, b)$ from $\getRight(\lid')$					\\
-				\qquad if $b = \bot$ then send$_\smt$ $(\sid, \getRight(\lid'), \bot)$ 
+				\qquad send$_\smt$ $(\lid', \Lock)$ to $\getRight(\lid')$ and $\sdv$	\\
+				\qquad receive$_\smt$ $(b)$ from $\getRight(\lid')$					\\
+				\qquad if $b = \bot$ then send$_\smt$ $(\getRight(\lid'), \bot)$ 
 				to $U_i$	 and $\sdv$															\\
 				\qquad else:																	\\
 				\qquad \quad $\updateStatus(\lid', \Lock)$									\\
-				\qquad \quad send$_\smt$ $(\sid, \lid', \Lock)$ to $U_i, \getRight(\lid')$ and 
+				\qquad \quad send$_\smt$ $(\lid', \Lock)$ to $U_i, \getRight(\lid')$ and 
 				$\sdv$
 			}
 			\\
-			\procedure[mode=text]{$\mathsf{GetStatus}(\sid, \lid)$}{
+			\procedure[mode=text]{$\mathsf{GetStatus}(\lid)$}{
 				Upon invocation by $U_i$:												\\
 				%if $\getLeft(\lid) \neq U_i$ or $\getRight(\lid) \neq U_i$ then abort	\\
-				send$_\smt$ $(\sid, \lid, \getStatus(\lid))$ to $U_i$
+				send $(\lid, \getStatus(\lid))$ to $U_i$
 			}
 		\end{minipage}
 	}
@@ -459,6 +543,7 @@ by recursively traversing the path of each given lock.
 	\caption{Ideal functionality $\FF_{\mathsf{MPMHL}}$ in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.}
 	\label{fig:ideal-mpmhl}
 \end{figure*}
+
 
 \subsubsection{Discussion}
 \label{sec:mpmhl-discussion}
