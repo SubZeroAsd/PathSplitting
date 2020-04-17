@@ -19,20 +19,20 @@ generates $v$ lock/trapdoor pairs, and two encryption keys $k_s, k_t$, encrypts 
 using the key $k_t$ (therefore, creating a ciphertext $c_t$), secret shares the key $k_t$ into 
 $v$ shares ($[k_t]_1,\ldots,[k_t]_v$), encrypts all these shares individually using the key $k_s$ 
 (therefore, creating $v$ ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$), includes these ciphertexts 
-inside the $v$ locks that it previously created (one ciphertext per lock), and sends $c_t$ and 
-$k_s$ to the receiver. At this point the receiver has the key $k_s$, which can be used to decrypt 
-the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$, however, he doesn't have the key $k_t$, 
-which will allow him to decrypt the ciphertext $c_t$ that includes the trapdoors he needs 
-to release the locks. Since the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$ are now part of 
-the locks, they will eventually reach the receiver, and at that point the receiver can use the 
-key $k_s$ it received from the sender to decrypt these ciphertexts, and obtain the shares $
-[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
+inside the $v$ locks that it previously created (one ciphertext per lock), and sends the 
+trapdoor $\td := (c_t, k_s)$ to the receiver. At this point the receiver has the key $k_s$, 
+which can be used to decrypt the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$, however, he 
+doesn't have the key $k_t$, which will allow him to decrypt the ciphertext $c_t$ that includes 
+the trapdoors he needs to release the locks. Since the share ciphertexts $(c_s^{(1)},
+\ldots,c_s^{(v)})$ are now part of the locks, they will eventually reach the receiver, and at 
+that point the receiver can use the key $k_s$ it received from the sender to decrypt these 
+ciphertexts, and obtain the shares $[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
 Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the 
 ciphertext $c_t$ to obtain the trapdoors of the locks, and start releasing the locks. Hence, the 
 receiver needs to wait for all the $v$ locks to reach him, so that he can decrypt all the 
 ciphertexts that are part of the locks and reconstruct the key $k_t$. Instead of forcing the 
-receiver to wait for all the $v$ locks, we can also force him to wait for a subset of size $t$ of 
-them using a $t$-out-of-$v$ secret sharing. The locking and releasing mechanisms are identical in 
+receiver to wait for all the $v$ locks, we can also force him to wait for a subset of size $t$  
+using a $t$-out-of-$v$ secret sharing. The locking and releasing mechanisms are identical in 
 both the single-trapdoor and multi-trapdoor constructions, and are based on pairings. 
 The differences between the two constructions are how the setup is performed by the sender, and 
 how the release of the locks from receiver (extraction phase) happens.
@@ -76,7 +76,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \centering
 \fbox{\procedure{}{
 	\< \mathsf{lock}_{U_i}(m): \< \\[][\hline]
-	\< \text{Parse } m \text{ as } (\vec{s},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\}) \< \\ [-0.15\baselineskip][]
+	\< \text{Parse } m \text{ as } (U_r,\vec{s},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\}) \< \\ [-0.15\baselineskip][]
 	\< \text{Initialize } \vec{w} = \emptyset \< \\ [-0.15\baselineskip][]
 	\< \pcfor j \pcin \{1..k_i\} \pcdo \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{get}\mathsf{-channel},\cid_i^j) \< \\ [-0.15\baselineskip][]
@@ -84,13 +84,18 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \pcif \gamma_j = \bot \textbf{ or } \gamma_j.\cash < v_i^j \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcreturn \bot \< \\ [-0.15\baselineskip][] 
 	\< \pcind \pcelse \< \\ [-0.15\baselineskip][] 
-	\< \pcind \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{lock},\vec{s},U_i^j,v_i^j,t_i^j) \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{lock},\vec{s},U_i^j) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \text{Receive } (\vec{w}_i^j,\vec{s}_i^j) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcif \vec{w}_i^j = \bot \textbf{ or } \vec{s}_i^j = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcind \pcreturn \bot \< \\ [-0.15\baselineskip][]
-	\< \pcind \pcind \MESSAGEE{Update channel capacity here.} \< \\[-0.15\baselineskip][]
+	\< \pcind \pcind \text{Create } \vec{\theta} = (\theta_{U_i} := (\gamma_j.\cash - v_i^j, \theta_{U_i}.\varphi), \theta_{U_i^j} := (\gamma_j.\cash + v_i^j, \theta_{U_i^j}.\varphi) \TODOP{How to write the conditions?} \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{update},\gamma_j.\cid,
+			\vec{\theta},t_i^j) \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Receive } b \text{ from } \FF_{\GC} \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \pcif b = \bot \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \pcind \pcreturn \bot \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \text{Set } \vec{w} = \vec{w} \cup \vec{w}_i^j \< \\ [-0.15\baselineskip][]
-	\< \pcind \pcind \text{Send } (\mathsf{lock},U_i,(\vec{s}_i^j,v_i^j)) \text{ to } U_i^j \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Send } (\mathsf{lock},U_i,(U_r,\vec{s}_i^j,v_i^j)) \text{ to } U_i^j \< \\ [-0.15\baselineskip][]
 	\< \pcreturn \vec{w} \<
 }}
 
@@ -107,7 +112,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{setup},v,U_r) \< \\ [-0.15\baselineskip][]
 	\< \text{Receive } (\vec{\td}, \vec{s}) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
 	\< \text{Send } (\mathsf{setup}, U_s, \vec{\td}) \text{ to } U_r \< \\ [-0.15\baselineskip][]
-	\< \text{Compute } \vec{w}_s \gets \mathsf{lock}_{U_s}((\vec{s},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
+	\< \text{Compute } \vec{w}_s \gets \mathsf{lock}_{U_s}((U_r,\vec{s},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcif \vec{w}_s = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \text{Store } \vec{w}_s
@@ -146,10 +151,10 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \mathsf{pay}_{U_i}(m): \< \\[][\hline]
 	\< \text{Parse } m \text{ as } (\textit{operation}, U^*, m^*) \< \\ [-0.15\baselineskip][]
 	\< \pcif \textit{operation} = \mathsf{lock} \pcthen \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Parse } m^* \text{ as } (\vec{s}_i,v_i) \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Query } \MESSAGEE{routing ideal functionality} \text{ on } (\mathsf{get}\mathsf{-split},\vec{s}_i,v_i) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Parse } m^* \text{ as } (U_r,\vec{s}_i,v_i) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \MESSAGEE{routing ideal functionality} \text{ on } (\mathsf{get}\mathsf{-split},U_r,v_i) \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Receive } \{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\} \text{ from } \MESSAGEE{routing ideal functionality} \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Compute } \vec{w} \gets \mathsf{lock}_{U_i}((\vec{s},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\})) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Compute } \vec{w} \gets \mathsf{lock}_{U_i}((U_r,\vec{s},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif \vec{w} = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Set } \vec{w}_i = \vec{w}_i \cup \vec{w} \< \\ [-0.15\baselineskip][]
