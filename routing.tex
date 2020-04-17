@@ -55,28 +55,42 @@
 		\quad \quad \quad \quad \quad If $\node' \in \Corrupted$ then $\send(\nodeid{\node'}{\nodelandmark})$ to $\sdv$\\
 		\quad \quad \quad \quad Enqueue $\node'$ in $\QQ$
 		}
-		\end{minipage}
+		\end{minipage}%
 		\begin{minipage}[t]{0.4\textwidth}
-		\procedure[mode=text]{RoutePay($\node_r$)}{
-		Upon invocation by $\node_s$:\\
-		$\send(\node_s)$ to $\node_r$\\
-		$\receive(\nodeid{\node_r}{l_1}, \ldots, \nodeid{\node_r}{l_k}$ from $\node_r$\\
-		for $i \in \{1, \ldots, k\}$ do\\
-		\quad $\send(\nodeid{\node_r}{l_i}$ to $\node_s$\\
-		\quad $\receive(b)$ from $\node_s$\\
-		\quad If $b = \top$ then \\
-		\quad \quad Set $\node^* := \node_s$\\
-		\quad \quad While $\node^* \neq \node_r$ and $\node^* \neq \bot$ do \\
-		\quad \quad \quad Compute $\node_i$ s.t. $\node_i \in \textit{ngb}(\node^*))$ and $\textit{min}(\distfun(\node^*, \node_i))$\\
-%		\quad \quad $\send(\nodeid{\node_r}{l_i})$ to $\node_i$\\
-%		\quad \quad $\receive(b)$ from $\node_i$\\
-%		\quad \quad If $b = bot$ then set $\node^* := \bot$\\
-%		\quad \quad Else then set $\node^* := \node_i$
-		}	
+		\procedure[mode=text]{InitRoute($\node_r$)}{
+		Upon invocation by $\node$:\\
+		$\send(\node)$ to $\node_r$\\
+		$\receive(b, (\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k}) )$ from $\node_r$\\
+		If $\b = \bot$, $\send(\bot)$ to $\node$\\
+		Else $\send(\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k})$ to $\node$
+		}
+		\procedure[mode=text]{NextHop($\nodeid{\node_r}{\nodelandmark}, \nodelandmark$)}{
+		Upon invocation by $\node$:\\
+		Compute $\node^*$ s.t. $\node^* \in \textit{ngb}(\node))$ and $\textit{min}(\distfun(\nodeid{\node^*}{\nodelandmark}, \nodeid{\node_r}{\nodelandmark}))$\\
+		$\send(\node^*)$ to $\node$
+		}
 		\end{minipage}
+%		\begin{minipage}[t]{0.4\textwidth}
+%		\procedure[mode=text]{RoutePay($\node_r$)}{
+%		Upon invocation by $\node_s$:\\
+%		$\send(\node_s)$ to $\node_r$\\
+%		$\receive(\nodeid{\node_r}{l_1}, \ldots, \nodeid{\node_r}{l_k}$ from $\node_r$\\
+%		for $i \in \{1, \ldots, k\}$ do\\
+%		\quad $\send(\nodeid{\node_r}{l_i}$ to $\node_s$\\
+%		\quad $\receive(b)$ from $\node_s$\\
+%		\quad If $b = \top$ then \\
+%		\quad \quad Set $\node^* := \node_s$\\
+%		\quad \quad While $\node^* \neq \node_r$ and $\node^* \neq \bot$ do \\
+%		\quad \quad \quad Compute $\node_i$ s.t. $\node_i \in \textit{ngb}(\node^*))$ and $\textit{min}(\distfun(\node^*, \node_i))$\\
+%%		\quad \quad $\send(\nodeid{\node_r}{l_i})$ to $\node_i$\\
+%%		\quad \quad $\receive(b)$ from $\node_i$\\
+%%		\quad \quad If $b = bot$ then set $\node^* := \bot$\\
+%%		\quad \quad Else then set $\node^* := \node_i$
+%		}	
+%		\end{minipage}
 	}
 	\end{center}
-	
+	\TODOP{Missing cross-chain routing}
 	\caption{Ideal functionality for routing}
 	\label{fig:ideal-routing}
 \end{figure*}
