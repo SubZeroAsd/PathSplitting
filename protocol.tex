@@ -189,20 +189,19 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\framebox[0.78\textwidth]{
 		\begin{minipage}[t]{0.75\textwidth}
 			\underline{{$\langle\Setup_{U_s}(1^\lambda,U_r,v),\Setup_{U_r}(1^\lambda)\rangle$}}: 
-			On input the security parameter $1^\lambda$, a user identifier $U_n$, and payment 
-			value $v$, the protocol does the following:
+			On input the security parameter $1^\lambda$, a receiver user identifier $U_r$, and 
+			payment value $v$, the protocol does the following:
 			\begin{itemize}[label=-]
-				\item Compute the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) 
+				\item Generate the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) 
 				\gets \BilGen(1^\lambda)$
 				\item Sample $(x,y) \sample \ZZ_q^2$
-				\item Compute $\ell_0^{(1)} \gets g_1^{xy}$, $\ell_0^{(2)} \gets g_T^y$ and 
-				set the lock $\ell_0 := (\ell_0^{(1)},\ell_0^{(2)})$
-				\item Send $\vec{\td} := (x)$ to $U_r$ and $\vec{\ell} := (\ell_0)$ to $U_s$
+				\item Compute $\ell_1^{(1)} \gets g_1^{xy}$, $\ell_1^{(2)} \gets g_T^y$ and 
+				set the lock $\ell_1 := (\ell_1^{(1)},\ell_1^{(2)})$
+				\item $\pcreturn \vec{\td} := (x)$ to $U_r$ and $\vec{\ell} := (\ell_1)$ to $U_s$
 			\end{itemize}
-			\underline{$\langle \Lock_{U_i}(U_r, \vec{\ell},U_j,v_j)\}), \Lock_{U_j}(U_i)
+			\underline{$\langle \Lock_{U_i}(U_r, \vec{\ell},U_j,v_j)\}), \Lock_{U_j}()
 			\rangle$}: On input a receiver identifier $U_r$, vector of locks $\vec{\ell}$, 
-			payment value $v_j$ and pair of user identifiers $U_i, U_j$, the protocol does the
-			following: 
+			payment value $v_j$ and a user identifiers $U_j$, the protocol does the following: 
 			\begin{itemize}[label=-]
 				\item Parse the vector $\vec{\ell}$ as $(\ell_1,\ldots,\ell_k)$
 				\item Sample $w_i \sample \ZZ_q$ and set $\vec{w} := (w_i)$
@@ -210,7 +209,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\ell_i^{(2)})$
 				\item Compute the lock $\ell_i' \gets((\ell_i^{(1)})^{w_i},(\ell_i^{(2)})^{w_i})$ 
 				and set $\vec{\ell}_j := (\ell_i')$
-				\item Send $(U_r,\vec{\ell}_j,v_j)$ to $U_j$ and $\vec{w}$ to $U_i$
+				\item $\pcreturn (U_r,\vec{\ell}_j,v_j)$ to $U_j$ and $\vec{w}$ to $U_i$
 			\end{itemize}
 			\underline{$\Extract(\vec{\ell}, \vec{\td})$}: On input a vector of locks 
 			$\vec{\ell} := (\ell_1,\ldots,\ell_j)$, a vector of trapdoors $\vec{\td} := (x)$, 
@@ -220,19 +219,19 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\item $\pcfor i \pcin \{1..j\} \pcdo$
 				\item $\pcind$Parse $\ell_i$ as $(\ell_i^{(1)},\ell_i^{(2)})$
 				\item $\pcind \pcif e((\ell_i^{(1)})^{x^{-1}}, g_2) = \ell_i^{(2)} \pcthen$
-				\item $\pcind \pcind$Set $k_i = (\ell_i^{(1)})^{x^{-1}}$ and add $k_i$ into $
-				\vec{k}$
-				\item $\pcind \pcelse$Add $\bot$ to $\vec{k}$\
-				\item Return $\vec{k}$
+				\item $\pcind \pcind$Set $k_i = (\ell_i^{(1)})^{x^{-1}}$ and add $k_i$ into 
+				$\vec{k}$
+				\item $\pcind \pcelse$Add $\bot$ to $\vec{k}$
+				\item $\pcreturn \vec{k}$
 			\end{itemize}
 			\underline{$\Release(\ell, k, w)$}: On input a lock $\ell$, a key $k$ and 
 			a witness $w$, the algorithm proceeds as follows:
-			\begin{itemize}
+			\begin{itemize}[label=-]
 				\item Compute $k' \gets (k)^{w^{-1}}$
-				\item Return $k'$ if $\Verify(\ell, k) = 1$, and $\bot$ otherwise
+				\item $\pcreturn k'$ if $\Verify(\ell, k) = 1$, and $\bot$ otherwise
 			\end{itemize}
 			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$ and a key $k$, 
-			parse $\ell$ as $(\ell^{(1)}, \ell^{(2)})$, and return 1 if $e(k, g_2) \? 
+			parse $\ell$ as $(\ell^{(1)}, \ell^{(2)})$, and $\pcreturn 1$ if $e(k, g_2) \? 
 			\ell^{(2)}$ holds, and 0 otherwise.
 		\end{minipage}
 	}
@@ -242,54 +241,77 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\label{fig:single-trapdoor}
 \end{figure*}
 
-%\MESSAGEE{Can an intermediary have unequal number of states, keys and witnesses for $\Extract$?}
-
 \subsection{Multi-Trapdoor Construction}
 
 \begin{figure*}[htb]
 	\begin{center}
 	\framebox[0.78\textwidth]{
 		\begin{minipage}[t]{0.75\textwidth}
-			\underline{$\langle \Setup_{U_0}(1^\lambda, v, U_n), \Setup_{U_n}(1^\lambda) \rangle$}: 
-			On input the security parameter $1^\lambda$, a payment value $v$ and a user identifier $U_n$, 
-			obtain the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) \gets \BilGen(1^\lambda)$,
-			sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$, $(\sk_t, \pk_t) \sample \kgen(1^\lambda)$ and 
-			$(\sk_s, \pk_s) \sample \kgen(1^\lambda)$, secret share $\sk_t$ as $([\sk_t]_1,\ldots[\sk_t]_v)$, 
-			compute the ciphertexts $c_t \gets \enc(\pk_t, x_1 \concat\cdots\concat x_v)$ and $(c_s^{(1)},
-			\ldots,c_s^{(v)}) \gets (\enc(\pk_s, [\sk_t]_1),\ldots,\enc(\pk_s, [\sk_t]_v))$, compute the states 
-			$(s_1,\ldots,s_v) \gets ((g_1^{x_1y},g_T^y, c_s^{(1)}),\ldots,(g_1^{x_vy}, g_T^y, c_s^{(v)}))$, send 
-			$\vec{\td} := ((\sk_s,\pk_s), c_t, v)$ to $U_n$, and return $\vec{s} := (s_1,\ldots,s_v)$ to 
-			$U_0$. \\
-			\underline{$\langle \Lock_{U_i}(\vec{s}, \{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}), 
-			\Lock_{U_{j_1}}(), \ldots, \Lock_{U_{j_m}}() \rangle$}: On input a vector of states  
-			$\vec{s} := (s_1,\ldots,s_l)$, a set of tuples $\{(U_{j_1},p_{j_1}),\ldots,(U_{j_m},p_{j_m})\}$, 
-			where $U_{j_i}$ is a user identifier and $p_{j_i}$ is the corresponding partition size, 
-			$\forall e$ in $[1,m]$, sample a random $r_e \sample \ZZ_q$, pick $p_{j_e}$ many unused 
-			states $(s_1,\ldots,s_{p_{j_e}})$ from $\vec{s}$, $\forall a$ in $[1,p_{j_e}]$, parse state $s_a$ 
-			as $(s_a^{(1)},s_a^{(2)},s_a^{(3)})$, set $s_a^\dag \gets ((s_a^{(1)})^{r_e}, (s_a^{(2)})^{r_e}, 
-			\renc(s_a^{(3)}))$. Finally, send $\vec{s}^\dag := (s_1^\dag,\ldots,s_{p_{j_e}}^\dag)$ to 
-			$U_{j_e}$, and store $\vec{w} := (r_1,\ldots,r_m)$. \\
-			\underline{$\Extract(\vec{s}, \vec{\td})$}: On input a vector of states  
-			$\vec{s} := (s_1,\ldots,s_l)$, a vector of trapdoors $\vec{td} := ((\sk_s,\pk_s), c_t, v)$, 
-			if $l \neq v$, then return $\bot$. Otherwise, $\forall i$ in $[1,l]$, parse $s_i$ as 
-			$(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$ and decrypt to obtain $[\sk_t]_i \gets 
-			\dec(\sk_s, s_i^{(3)})$. If any $[\sk_t]_i = \bot$, then return $\bot$, else reconstruct 
-			$\sk_t$ from $([\sk_t]_1,\ldots,[\sk_t]_v)$. Compute $x \gets \dec(\sk_t, c_t)$, if $x = \bot$, then 
-			return $\bot$, otherwise, parse $x$ as $(x_1,\ldots,x_v)$, $\forall i$ in $[1,v]$ check whether 
-			$e((s_i^{(1)})^{{x_i}^{-1}}, g_2) \? s_i^{(2)}$. If the check passes, set 
-			$k_i \gets (s_i^{(1)})^{{x_i}^{-1}}$, otherwise return $\bot$. Finally, return $\vec{k} := 
-			(k_1,\ldots,k_l)$. \\
-			\underline{$\Release(\vec{k}, \vec{w})$}: On input a vector of keys $\vec{k} := (k_1,\ldots,k_l)$, 
-			and a vector of witnesses $\vec{w} := (r_1,\ldots,r_l)$, $\forall i$ in $[1,l]$, set $k_i' \gets 
-			(k_i)^{{r_i}^{-1}}$, and return $\vec{k'} := (k_1',\ldots,k_l')$. \\
-			\underline{$\Verify(\vec{s}, \vec{k})$}: On input a vector of states $\vec{s} := (s_1,\ldots,
-			s_l)$ and a vector of keys $\vec{k} := (k_1,\ldots,k_l)$, return 1 if $\forall i \in [1,l]$, 
-			parse $s_i$ as $(s_i^{(1)}, s_i^{(2)}, s_i^{(3)})$ and $e(k_i, g_2) \? s_i^{(2)}$ holds, and 
-			0 otherwise.
+			\underline{{$\langle\Setup_{U_s}(1^\lambda,U_r,v),\Setup_{U_r}(1^\lambda)\rangle$}}: 
+			On input the security parameter $1^\lambda$, a receiver user identifier $U_r$, and 
+			payment value $v$, the protocol does the following:
+			\begin{itemize}[label=-]
+				\item Generate the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) 
+				\gets \BilGen(1^\lambda)$
+				\item Sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$
+				\item Sample $(\sk_t,\pk_t) \sample \kgen(1^\lambda)$
+				\item Secret share $\sk_t$ as $([sk_t]_1,\ldots,[sk_t]_v)$
+				\item Compute $c_t \gets \enc(\pk_t, x_1 \concat \cdots \concat x_v)$
+				\item Compute $(c_s^{(1)},\ldots,c_s^{(v)}) \gets (\enc(\pk_{U_r},[sk_t]_1),
+				\ldots,\enc(\pk_{U_r},[sk_t]_v))$
+				\item Compute $(\ell_1,\ldots,\ell_v) \gets ((\ell_1^{(1)},\ell_1^{(2)},
+				\ell_1^{(3)}),\ldots,(\ell_v^{(1)},\ell_v^{(2)},\ell_v^{(3)}))$, where for all 
+				$i \in [1,v]$, $\ell_i^{(1)} \gets g_1^{x_i y}$, $\ell_i^{(2)} \gets g_T^y$ and 
+				$\ell_i^{(2)} := c_s^{(i)}$
+				\item $\pcreturn \vec{\td} := (c_t,v)$ to $U_r$ and $\vec{\ell} := 
+				(\ell_1,\ldots,\ell_v)$ to $U_s$
+			\end{itemize}
+			\underline{$\langle \Lock_{U_i}(U_r, \vec{\ell},U_j,v_j)\}), \Lock_{U_j}()
+			\rangle$}: On input a receiver identifier $U_r$, vector of locks $\vec{\ell}$, 
+			payment value $v_j$ and a user identifiers $U_j$, the protocol does the following: 
+			\begin{itemize}[label=-]
+				\item Parse the vector $\vec{\ell}$ as $(\ell_1,\ldots,\ell_k)$
+				\item Initialize an empty vector $\vec{\ell}_j$
+				\item Sample $w_i \sample \ZZ_q$ and set $\vec{w} := (w_i)$
+				\item $\pcfor i \pcin \{1..v_j\} \pcdo$
+				\item $\pcind$Sample unused $\ell_i \sample \vec{\ell}$ and parse it as 
+				$(\ell_i^{(1)},\ell_i^{(2)},\ell_i^{(3)})$
+				\item $\pcind$Compute the lock $\ell_i' \gets((\ell_i^{(1)})^{w_i},
+				(\ell_i^{(2)})^{w_i},\renc(\ell_i^{(3)}))$ and add $\ell_i'$ into $\vec{\ell}_j$
+				\item $\pcreturn (U_r,\vec{\ell}_j,v_j)$ to $U_j$ and $\vec{w}$ to $U_i$
+			\end{itemize}
+			\underline{$\Extract(\vec{\ell}, \vec{\td})$}: On input a vector of locks 
+			$\vec{\ell} := (\ell_1,\ldots,\ell_j)$, a vector of trapdoors $\vec{\td} := (c_t,v)$, 
+			the algorithm returns $\bot$ if $|\vec{\ell}| \neq v$. Otherwise, it proceeds as 
+			follows:
+			\begin{itemize}[label=-]
+				\item Initialize an empty vector $\vec{k}$
+				\item $\pcfor i \pcin \{1..v\} \pcdo$
+				\item $\pcind$Parse $\ell_i$ as $(\ell_i^{(1)},\ell_i^{(2)},\ell_i^{(3)})$
+				\item $\pcind$Compute $[sk_t]_i \gets \dec(\sk_{U_r},\ell_i^{(3)})$
+				\item Reconstruct $\sk_t$ from $([sk_t]_1,\ldots,[sk_t]_v)$
+				\item Compute $x \gets \dec(\sk_t,c_t)$ and parse it as $(x_1,\ldots,x_v)$
+				\item $\pcfor i \pcin \{1..v\} \pcdo$
+				\item $\pcind$Parse $\ell_i$ as $(\ell_i^{(1)},\ell_i^{(2)},\ell_i^{(3)})$
+				\item $\pcind \pcif e((\ell_i^{(1)})^{x_i^{-1}}, g_2) = \ell_i^{(2)} \pcthen$
+				\item $\pcind \pcind$Set $k_i = (\ell_i^{(1)})^{x_i^{-1}}$ and add $k_i$ into 
+				$\vec{k}$
+				\item $\pcind \pcelse$Add $\bot$ to $\vec{k}$
+				\item $\pcreturn \vec{k}$
+			\end{itemize}
+			\underline{$\Release(\ell, k, w)$}: On input a lock $\ell$, a key $k$ and 
+			a witness $w$, the algorithm proceeds as follows:
+			\begin{itemize}[label=-]
+				\item Compute $k' \gets (k)^{w^{-1}}$
+				\item $\pcreturn k'$ if $\Verify(\ell, k) = 1$, and $\bot$ otherwise
+			\end{itemize}
+			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$ and a key $k$, 
+			parse $\ell$ as $(\ell^{(1)},\ell^{(2)}, \ell^{(3)})$, and $\pcreturn 1$ if $e(k, g_2) \? 
+			\ell^{(2)}$ holds, and 0 otherwise.
 		\end{minipage}
 	}
 	\end{center}
 	
 	\caption{Algorithms and protocols for the multiple trapdoor construction.}
-	\label{fig:multi-trapdoor}
+	\label{fig:single-trapdoor}
 \end{figure*}
