@@ -229,7 +229,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 			a witness $w_i$, the algorithm proceeds as follows:
 			\begin{itemize}
 				\item Compute $k_i' \gets (k_i)^{w_i^{-1}}$
-				\item Return $k_i'$
+				\item Return $k_i'$ if $\Verify(\ell_i, k_i) = 1$, and $\bot$ otherwise
 			\end{itemize}
 			\underline{$\Verify(\ell_i, k_i)$}: On input a lock $\ell_i$ and a key $k_i$, 
 			parse $\ell_i$ as $(\ell_i^{(1)}, \ell_i^{(2)})$, and return 1 if $e(k_i, g_2) \? 
