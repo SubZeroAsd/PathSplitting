@@ -472,38 +472,52 @@ to the given locks by recursively traversing the path of each given lock.
 				\quad $\lid_i \gets \mathsf{generateLock}(1^\lambda)$					\\
 				\quad $\td_i \gets \generateTrapdoor(\lid_i)$							\\
 				\quad add $\lid_i$ to $\vec{\ell}$ and $\td_i$ to $\vec{\td}$			\\
-				\quad set $\mathcal{T}[\lid_i] = \td_i$									\\
-				send $(\vec{\ell}, \vec{\td})$ via $\FF_{\smt}$ to $U_s$ and $\sdv$		\\
-				send $(v, \vec{\td})$ via $\FF_{\smt}$ to $U_r$ and $\sdv$
+				\quad insert $(\lid_i,\td_i)$ into $\mathcal{T}$							\\
+				send $(\mathsf{setup},U_r,(\vec{\ell}, \vec{\td}))$ via $\FF_{\smt}$ to 
+				$U_s$ and $\sdv$															\\
+				send $(\mathsf{setup},U_s,(v, \vec{\td}))$ via $\FF_{\smt}$ to $U_r$ and $\sdv$
 			}
 			\\ \\
-			\procedure[mode=text]{$\Release(\vec{\ell},\vec{k},\vec{w})$}{
+			\procedure[mode=text]{$\Release(\lid_i,k_i,w_i)$}{
 				Upon invocation by $U_i$: 												\\
-				Parse $\vec{k}$ as $(k_1,\ldots,k_j)$									\\
-				$\forall i \in [1,j]$: 													\\
-				\quad if $U_i = U_r$ or $\getRight(\lid_i) \neq U_i$ or 
+				if $U_i = U_r$ or $\getRight(\lid_i) \neq U_i$ or 
 				$\getStatus(\lid_i) \neq \Lock$ or $\getStatus(\getNextLock(\lid_i)) 
-				\neq \Rel$	then send $(\lid_i, \bot)$ to $U_i$ and $\sdv$				\\
+				\neq \Rel$ then send $\bot$ to $U_i$ and $\sdv$							\\
+				else:																	\\
+				\quad $k_i' \gets \updateStatus(\lid_i, (k_i,w_i), \Rel)$				\\
+				\quad if $k_i' = \bot$ then:												\\
+				\qquad send $(\mathsf{release},U_i,\bot)$ to $\getLeft(\lid_i)$ 
+				and $\sdv$																\\
+				\qquad send $\bot$ to $U_i$												\\
 				\quad else:																\\
-				\qquad $k_i \gets \updateStatus(\lid_i, (\vec{\ell},\vec{w}), \Rel)$		\\
-				\qquad send $(\lid_i, k_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
+				\qquad send $(\mathsf{release},U_i,(\lid_i, k_i'))$ to $\getLeft(\lid_i)$ 
+				and $\sdv$																\\
+				\qquad send $\top$ to $U_i$ 
 			}
 			\\
 			\procedure[mode=text]{$\Extract(\vec{\ell},\vec{\td})$}{
 				Upon invocation by $U_r$:												\\
-				Parse $\vec{\ell}$ as $(\lid_1,\ldots,\lid_j)$ and $\vec{\td}$ as $(\td_1,\ldots,\td_v)$																\\
+				Parse $\vec{\ell}$ as $(\lid_1,\ldots,\lid_j)$							\\
 				$\forall i \in [1,j]$: if $\getRight(\lid_i) \neq U_r$ or 
 				$\getStatus(\lid_i) \neq \Lock$ or 										\\
-				$\getNextLock(\lid_i) \neq \bot$ then abort								\\
-				if $\validateTrapdoors((\lid_1,\ldots,\lid_j),(\td_1,\ldots,\td_v)) = \bot$ 
-				\textcolor{blue}{(or $j \neq v$ in multi-trapdoor case)} then abort		\\
+				$\getNextLock(\lid_i) \neq \bot$ then set $\vec{\ell} = \vec{\ell} \setminus 
+				\{\lid_i\}$																\\
+				if $|\vec{\ell}| = 0$ \textcolor{blue}{ or $|\vec{\ell}| \neq |\vec{\td}|$ (in 
+				multi-trapdoor case)} then send $\bot$ to $U_r$							\\
 				$\forall i \in [1,j]$: 													\\
 				\quad $k_i \gets \updateStatus(\lid_i, \vec{\td}, \Rel)$					\\
-				\quad send $(\lid_i, k_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
+				\quad if $k_i = \bot$ then:												\\
+				\qquad send $(\mathsf{release},U_r,\bot)$ to $\getLeft(\lid_i)$ and 
+				$\sdv$																	\\
+				\qquad send $\bot$ to $U_r$												\\
+				\quad else:																\\
+				\qquad send $(\mathsf{release},U_r,(\lid_i, k_i))$ to $\getLeft(\lid_i)$ and 
+				$\sdv$																	\\
+				\qquad send $\top$ to $U_r$
 			}
 		\end{minipage}
 		\begin{minipage}[t]{0.45\textwidth}
-			\procedure[mode=text]{$\Lock(\vec{\ell}, U_j, v_j)$}{
+			\procedure[mode=text]{$\Lock(U_r, \vec{\ell}, U_j, v_j)$}{
 				Upon invocation by $U_i$: 													\\
 				Initialize empty vectors $\vec{w}_i$ and $\vec{\ell}_j$						\\
 				Set $t = 1$ \textcolor{blue}{(or $t = v_j$ in multi-trapdoor case)}			\\
@@ -518,13 +532,17 @@ to the given locks by recursively traversing the path of each given lock.
 				\quad $\td \gets \mathsf{getTrapdoor}(\lid^*)$								\\
 				\quad insert $(\lid', \td, U_i, U_j, \Init, \bot)$ into $\LL$				\\
 				\quad $\setRightLock(\lid^*, \lid')$											\\
+				\quad insert $(\lid',\td)$ into $\mathcal{T}$								\\
 				send $(\vec{\ell}_j, \Lock)$ to $U_j$ and $\sdv$								\\
 				receive $b$ from $U_j$														\\
-				if $b = \bot$ then send $(U_j,\bot)$ to $U_i$ and $\sdv$						\\
+				if $b = \bot$ then: 															\\
+				\quad send $(\mathsf{lock},U_j,\bot)$ to $U_i$ and $\sdv$					\\
+				\quad send $(\mathsf{lock},U_i,\bot)$ to $U_j$ and $\sdv$					\\	
 				else:																		\\
 				\quad $\vec{\ell}_j \gets \updateStatus(\vec{\ell}_j, \vec{w}_i, \Lock)$	\\
-				\quad send $\vec{w}_i$ via $\FF_{\smt}$ to $U_i$ and $\sdv$					\\
-				\quad send $(\vec{\ell}_j, \Lock)$ to $U_j$ and $\sdv$
+				\quad send $(\mathsf{lock},U_j,\vec{w}_i)$ via $\FF_{\smt}$ to $U_i$ 
+				and $\sdv$																	\\
+				\quad send $(\mathsf{lock},U_i,(U_r,\vec{\ell}_j,v_j))$ to $U_j$ and $\sdv$
 			}
 			\\
 			\procedure[mode=text]{$\mathsf{GetStatus}(\lid)$}{
