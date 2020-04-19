@@ -177,12 +177,12 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 %$\BB$ via $\FF_{\BB}$ and adds $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends 
 %$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
 
-\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, v, U_r,\{(\cid_s^1, U_s^1,v_s^1,t_s^1),
+\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, U_r, v, \{(\cid_s^1, U_s^1,v_s^1,t_s^1),
 \ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})$ from a user $U_s$, $\FF$ proceeds 
 as follows 
 \begin{itemize}[label=-]
 	\item Initializes the queue $\QQ$, set $\JJ$ and lists $\DD, \HH, \RR, \VV, \UU$ as empty.
-	\item If the input set is empty or $\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts.
+	\item If the input set of $U_s$ is empty or $\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts.
 	\item Otherwise, for all $i \in [1,k_s]$, it enqueues $(\cid_s^i, U_s,U_s^i,v_s^i,t_s^i)$ 
 	to $\QQ$, adds $U_s^i$ to $\RR[U_s]$ and $U_s$ to $\UU$.
 \end{itemize}
@@ -207,25 +207,24 @@ Next, $\FF$ executes the following interactive protocol:
 %	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
 %	then $\FF$ aborts.
 	
-	\item While $\QQ \neq \emptyset$, $\FF$ does the following
+	\item While $\QQ$ is not empty, $\FF$ does the following
 	\begin{itemize}[label=-]
-		\item Dequeues an element $(\cid_i,U^*,,U_i,v_i,t_i)$ from $\QQ$.
-		\item Adds $U_i$ to $\UU$, and samples a random $h_i$.
+		\item Dequeues an element $(\cid_i,U^*,U_i,v_i,t_i)$ from $\QQ$.
+		\item Adds $U_i$ to $\UU$, and samples a random identifier $h_i$.
 		\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{get}\mathsf{-channel}, \cid_i)$}.
 		\item If a channel with identifier $\cid_i$ does not exists, then $\FF_{\GC}$ return 
 		$\bot$, and $\FF$ aborts.
 		\item Otherwise, $\FF_{\GC}$ returns the channel $\gamma_i$, where $\gamma_i.\cid = 
 		\cid_i$.
-		\item Ends the tuple $(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$, where $U_i$ replies 
-		either with $\top$ or $\bot$.
-		\item In the latter case, $\FF$ aborts.
+		\item Sends the tuple $(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$. \MESSAGEE{Shall we instead do a lock here?}
+		\item $U_i$ replies either with $\top$ or $\bot$, and in the latter case, $\FF$ aborts.
 		\item Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] 
 		+ v_i$, and checks if $\gamma_i.\cash \geq v_i$.
-		\item If this is the case, $\FF$ adds $d_i = (\gamma_i,U_i,v_i,t_i)$ to $\DD[U_i]$, 
+		\item If this is the case, $\FF$ adds $d_i = (\gamma_i,U^*,v_i,t_i)$ to $\DD[U_i]$, 
 		otherwise, $\FF$ aborts.
 		\item If $U_i = U_r$, then $\FF$ continues with the next iteration of the loop.
 		\item Otherwise, $\FF$ sends $(\mathsf{split}\mathsf{-req}, \NEWE{U_r}, v_i)$ to $U_i$ 
-		and $\sdv$. 
+		and $\sdv$. \MESSAGEE{Call routing ideal functionality here.}
 		\item $U_i$ replies with $(\mathsf{split}, \{(\cid_i^1,U_i^1,v_i^1,t_i^1),\ldots,
 		(\cid_i^{k_i},U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$.
 		\item Then, for all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
@@ -266,7 +265,7 @@ Next, $\FF$ executes the following interactive protocol:
 			\item Creates $\vec{\theta} = (\theta_{U_j} := (\gamma_j.\cash - v_j, \theta_{U_j}.
 			\varphi), \theta_{U_i} := (\gamma_j.\cash + v_j, \theta_{U_i}.\varphi)$. \TODOP{How to write the conditions here?}
 			\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{update},\gamma_j.\cid,
-			\vec{\theta},t_j)$}.
+			\vec{\theta},t_j)$}. \MESSAGEE{This call fails if there is not enough capacity in the channel or any other reason?}
 			\item If the call to $\FF_{\GC}$ succeeds, then $\FF$ sends $(\top, \HH[U_i])$ to 
 			$U_i$ and $\sdv$.
 			\item Otherwise, $\FF$ sends $(\bot, \HH[U_i])$ to $U_i$ and $\sdv$.
@@ -473,12 +472,12 @@ to the given locks by recursively traversing the path of each given lock.
 				\quad $\lid_i \gets \mathsf{generateLock}(1^\lambda)$					\\
 				\quad $\td_i \gets \generateTrapdoor(\lid_i)$							\\
 				\quad add $\lid_i$ to $\vec{\ell}$ and $\td_i$ to $\vec{\td}$			\\
-				\quad insert $(\lid_i, \td_i, U_s, \bot, \Init, \bot)$ to $\LL$			\\
-				send $\vec{\ell}$ to $U_s$ and $\sdv$									\\
+				\quad set $\mathcal{T}[\lid_i] = \td_i$									\\
+				send $(\vec{\ell}, \vec{\td})$ via $\FF_{\smt}$ to $U_s$ and $\sdv$		\\
 				send $(v, \vec{\td})$ via $\FF_{\smt}$ to $U_r$ and $\sdv$
 			}
 			\\ \\
-			\procedure[mode=text]{$\Release(\vec{k},\vec{w})$}{
+			\procedure[mode=text]{$\Release(\vec{\ell},\vec{k},\vec{w})$}{
 				Upon invocation by $U_i$: 												\\
 				Parse $\vec{k}$ as $(k_1,\ldots,k_j)$									\\
 				$\forall i \in [1,j]$: 													\\
@@ -486,7 +485,7 @@ to the given locks by recursively traversing the path of each given lock.
 				$\getStatus(\lid_i) \neq \Lock$ or $\getStatus(\getNextLock(\lid_i)) 
 				\neq \Rel$	then send $(\lid_i, \bot)$ to $U_i$ and $\sdv$				\\
 				\quad else:																\\
-				\qquad $k_i \gets \updateStatus(\lid_i, \vec{w}, \Rel)$					\\
+				\qquad $k_i \gets \updateStatus(\lid_i, (\vec{\ell},\vec{w}), \Rel)$		\\
 				\qquad send $(\lid_i, k_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
 			}
 			\\
@@ -496,40 +495,36 @@ to the given locks by recursively traversing the path of each given lock.
 				$\forall i \in [1,j]$: if $\getRight(\lid_i) \neq U_r$ or 
 				$\getStatus(\lid_i) \neq \Lock$ or 										\\
 				$\getNextLock(\lid_i) \neq \bot$ then abort								\\
-				if \textcolor{blue}{$j \neq v$ or} $\validateTrapdoors
-				((\lid_1,\ldots,\lid_j),(\td_1,\ldots,\td_v)) = \bot$ then abort			\\
+				if $\validateTrapdoors((\lid_1,\ldots,\lid_j),(\td_1,\ldots,\td_v)) = \bot$ 
+				\textcolor{blue}{(or $j \neq v$ in multi-trapdoor case)} then abort		\\
 				$\forall i \in [1,j]$: 													\\
 				\quad $k_i \gets \updateStatus(\lid_i, \vec{\td}, \Rel)$					\\
-				\quad send$_\smt$ $(\lid_i, k_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
+				\quad send $(\lid_i, k_i, \Rel)$ to $\getLeft(\lid_i)$ and $\sdv$
 			}
 		\end{minipage}
 		\begin{minipage}[t]{0.45\textwidth}
-			\procedure[mode=text]{$\Lock(\vec{\ell}, U_k, v_k)$}{
+			\procedure[mode=text]{$\Lock(\vec{\ell}, U_j, v_j)$}{
 				Upon invocation by $U_i$: 													\\
-				Parse $\vec{\ell}$ as $(\lid_1,\ldots,\lid_j)$								\\
-				$\forall j \in [1,k]$: if $U_i \neq U_0$ and $\getStatus(\lid_j) \neq 
-				\Lock$ and $\getRight(\lid_j) \neq U_i$ the abort							\\
-				\textcolor{blue}{if $\sum_{i=1}^m p_{j_i} > k$ then abort}					\\
-				set $\ell = (\lid_1,\ldots,\lid_k)$											\\
-				$\forall e \in [1,m]$:														\\
-				\quad $\forall a \in [1,p_{j_e}]$:											\\
-				\qquad $\lid' \sample \{0,1\}^{\lambda}$										\\
-				\qquad sample $\lid^* \sample \ell$ and set $\ell = \ell \setminus 
-				\{\lid^*\}$																	\\
-				\qquad if $U_i = U_0$: 														\\
-				\qquad \quad $\setRightUser(\lid^*, U_{j_e})$								\\
-				\qquad \quad set $\lid' = \lid^*$											\\
-				\qquad else: 																\\
-				\qquad \quad insert $(\lid', \bot, U_i, U_{j_e}, \Init, \bot)$ into $\LL$	\\
-				\qquad \quad $\setRightLock(\lid^*, \lid')$									\\
-				\qquad send$_\smt$ $(\lid', \Lock)$ to $\getRight(\lid')$ and $\sdv$	\\
-				\qquad receive$_\smt$ $(b)$ from $\getRight(\lid')$					\\
-				\qquad if $b = \bot$ then send$_\smt$ $(\getRight(\lid'), \bot)$ 
-				to $U_i$	 and $\sdv$															\\
-				\qquad else:																	\\
-				\qquad \quad $\updateStatus(\lid', \Lock)$									\\
-				\qquad \quad send$_\smt$ $(\lid', \Lock)$ to $U_i, \getRight(\lid')$ and 
-				$\sdv$
+				Initialize empty vectors $\vec{w}_i$ and $\vec{\ell}_j$						\\
+				Set $t = 1$ \textcolor{blue}{(or $t = v_j$ in multi-trapdoor case)}			\\
+				If $|\vec{\ell}| < t$ then abort												\\
+				Parse $\vec{\ell}$ as $(\lid_1,\ldots,\lid_k)$								\\
+				$\forall e \in [1,k]$: if $U_i \neq U_s$ and $\getStatus(\lid_e) \neq 
+				\Lock$ and $\getRight(\lid_e) \neq U_i$ the abort							\\
+				$\forall e \in [1,t]$:														\\
+				\quad sample $w \sample\{0,1\}^\lambda$ and set $\vec{w}_i=\vec{w}_i \cup w$\\
+				\quad sample $\lid^* \sample \vec{\ell}$ and set $\vec{\ell} = \vec{\ell} \setminus \{\lid^*\}$													\\
+				\quad $\lid' \gets \mathsf{generateLock}((\lid^*,w))$ and set $\vec{\ell}_j = \vec{\ell}_j \cup \lid'$													\\
+				\quad $\td \gets \mathsf{getTrapdoor}(\lid^*)$								\\
+				\quad insert $(\lid', \td, U_i, U_j, \Init, \bot)$ into $\LL$				\\
+				\quad $\setRightLock(\lid^*, \lid')$											\\
+				send $(\vec{\ell}_j, \Lock)$ to $U_j$ and $\sdv$								\\
+				receive $b$ from $U_j$														\\
+				if $b = \bot$ then send $(U_j,\bot)$ to $U_i$ and $\sdv$						\\
+				else:																		\\
+				\quad $\vec{\ell}_j \gets \updateStatus(\vec{\ell}_j, \vec{w}_i, \Lock)$	\\
+				\quad send $\vec{w}_i$ via $\FF_{\smt}$ to $U_i$ and $\sdv$					\\
+				\quad send $(\vec{\ell}_j, \Lock)$ to $U_j$ and $\sdv$
 			}
 			\\
 			\procedure[mode=text]{$\mathsf{GetStatus}(\lid)$}{
@@ -540,7 +535,7 @@ to the given locks by recursively traversing the path of each given lock.
 		\end{minipage}
 	}
 	
-	\caption{Ideal functionality $\FF_{\mathsf{MPMHL}}$ in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model.}
+	\caption{Ideal functionality $\FF_{\mathsf{MPMHL}}$ in $(\FF_{\mathsf{GDC}}, \FF_{\smt})$-hybrid model.}
 	\label{fig:ideal-mpmhl}
 \end{figure*}
 

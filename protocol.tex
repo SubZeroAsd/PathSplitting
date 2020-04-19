@@ -108,9 +108,9 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \centering
 \fbox{\procedure{}{
 	\< \mathsf{pay}_{U_s}(m): \< \\[][\hline]
-	\< \text{Parse } m \text{ as } (v, U_r,\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\}) \< \\ [-0.15\baselineskip][]
-	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{setup},v,U_r) \< \\ [-0.15\baselineskip][]
-	\< \text{Receive } (\vec{\td}, \vec{s}) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
+	\< \text{Parse } m \text{ as } (U_r,v,\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\}) \< \\ [-0.15\baselineskip][]
+	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{setup},U_r,v) \< \\ [-0.15\baselineskip][]
+	\< \text{Receive } (\vec{\td}, \vec{\ell}) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
 	\< \text{Send } (\mathsf{setup}, U_s, (v,\vec{\td})) \text{ to } U_r \< \\ [-0.15\baselineskip][]
 	\< \text{Compute } \vec{w}_s \gets \mathsf{lock}_{U_s}((U_r,\vec{s},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcif \vec{w}_s = \bot \pcthen \< \\ [-0.15\baselineskip][]
