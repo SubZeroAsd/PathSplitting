@@ -225,15 +225,15 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\item $\pcind \pcelse$Add $\bot$ to $\vec{k}$\
 				\item Return $\vec{k}$
 			\end{itemize}
-			\underline{$\Release(\ell_i, k_i, w_i)$}: On input a lock $\ell_i$, a key $k_i$ and 
-			a witness $w_i$, the algorithm proceeds as follows:
+			\underline{$\Release(\ell, k, w)$}: On input a lock $\ell$, a key $k$ and 
+			a witness $w$, the algorithm proceeds as follows:
 			\begin{itemize}
-				\item Compute $k_i' \gets (k_i)^{w_i^{-1}}$
-				\item Return $k_i'$ if $\Verify(\ell_i, k_i) = 1$, and $\bot$ otherwise
+				\item Compute $k' \gets (k)^{w^{-1}}$
+				\item Return $k'$ if $\Verify(\ell, k) = 1$, and $\bot$ otherwise
 			\end{itemize}
-			\underline{$\Verify(\ell_i, k_i)$}: On input a lock $\ell_i$ and a key $k_i$, 
-			parse $\ell_i$ as $(\ell_i^{(1)}, \ell_i^{(2)})$, and return 1 if $e(k_i, g_2) \? 
-			\ell_i^{(2)}$ holds, and 0 otherwise.
+			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$ and a key $k$, 
+			parse $\ell$ as $(\ell^{(1)}, \ell^{(2)})$, and return 1 if $e(k, g_2) \? 
+			\ell^{(2)}$ holds, and 0 otherwise.
 		\end{minipage}
 	}
 	\end{center}

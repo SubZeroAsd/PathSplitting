@@ -478,19 +478,19 @@ to the given locks by recursively traversing the path of each given lock.
 				send $(\mathsf{setup},U_s,(v, \vec{\td}))$ via $\FF_{\smt}$ to $U_r$ and $\sdv$
 			}
 			\\ \\
-			\procedure[mode=text]{$\Release(\lid_i,k_i,w_i)$}{
+			\procedure[mode=text]{$\Release(\lid,k,w)$}{
 				Upon invocation by $U_i$: 												\\
-				if $U_i = U_r$ or $\getRight(\lid_i) \neq U_i$ or 
-				$\getStatus(\lid_i) \neq \Lock$ or $\getStatus(\getNextLock(\lid_i)) 
+				if $U_i = U_r$ or $\getRight(\lid) \neq U_i$ or 
+				$\getStatus(\lid) \neq \Lock$ or $\getStatus(\getNextLock(\lid)) 
 				\neq \Rel$ then send $\bot$ to $U_i$ and $\sdv$							\\
 				else:																	\\
-				\quad $k_i' \gets \updateStatus(\lid_i, (k_i,w_i), \Rel)$				\\
-				\quad if $k_i' = \bot$ then:												\\
-				\qquad send $(\mathsf{release},U_i,\bot)$ to $\getLeft(\lid_i)$ 
+				\quad $k' \gets \updateStatus(\lid, (k,w), \Rel)$						\\
+				\quad if $k' = \bot$ then:												\\
+				\qquad send $(\mathsf{release},U_i,\bot)$ to $\getLeft(\lid)$ 
 				and $\sdv$																\\
 				\qquad send $\bot$ to $U_i$												\\
 				\quad else:																\\
-				\qquad send $(\mathsf{release},U_i,(\lid_i, k_i'))$ to $\getLeft(\lid_i)$ 
+				\qquad send $(\mathsf{release},U_i,(\lid, k'))$ to $\getLeft(\lid)$ 
 				and $\sdv$																\\
 				\qquad send $\top$ to $U_i$ 
 			}
