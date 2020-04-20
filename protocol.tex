@@ -271,6 +271,8 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 			\rangle$}: On input a receiver identifier $U_r$, vector of locks $\vec{\ell}$, 
 			payment value $v_j$ and a user identifiers $U_j$, the protocol does the following: 
 			\begin{itemize}[label=-]
+				\item $\pcif |\vec{\ell}| < v_j \pcthen$
+				\item $\pcind \pcreturn \bot$ to $U_j$ and $U_i$
 				\item Parse the vector $\vec{\ell}$ as $(\ell_1,\ldots,\ell_k)$
 				\item Initialize an empty vector $\vec{\ell}_j$
 				\item Sample $w_i \sample \ZZ_q$ and set $\vec{w} := (w_i)$
@@ -340,6 +342,8 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 			\rangle$}: On input a receiver identifier $U_r$, vector of locks $\vec{\ell}$, 
 			payment value $v_j$ and a user identifiers $U_j$, the protocol does the following: 
 			\begin{itemize}[label=-]
+				\item $\pcif |\vec{\ell}| < v_j \pcthen$
+				\item $\pcind \pcreturn \bot$ to $U_j$ and $U_i$
 				\item Parse the vector $\vec{\ell}$ as $(\ell_1,\ldots,\ell_k)$
 				\item Initialize an empty vector $\vec{\ell}_j$
 				\item $\pcfor i \pcin \{1..v_j\} \pcdo$
