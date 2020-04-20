@@ -36,13 +36,18 @@ parties are aware of the given round.
 We assume that the parties are connected via authenticated communication channels with guaranteed 
 delivery of exactly one round. Hence, if a party $P$ sends a message $m$ to party $Q$ in round 
 $r$, party $Q$ receives the message at the beginning of round $r + 1$. Furthermore, $Q$ is sure 
-that the message was sent by $P$. The adversary can change the order of messages \MESSAGEE{also the content of the messages if we do not use $\FF_\smt$} that were sent in the same round, 
-but it cannot modify, delay or drop messages sent between parties, or it cannot insert a new 
-message. For simplicity, we assume that computation is instantaneous. These assumptions on the 
-communication channels are formalized as an ideal functionality $\FF_{\mathsf{GDC}}$, as defined 
-in \cite{mpvsc}.
+that the message was sent by $P$. The adversary can change the order of messages that were sent 
+in the same round, but it cannot modify, delay or drop messages sent between parties, or it 
+cannot insert a new message. For simplicity, we assume that computation is instantaneous. These 
+assumptions on the communication channels are formalized as an ideal functionality 
+$\FF_{\mathsf{GDC}}$, as defined in \cite{mpvsc}.
 
-\TODOE{Figure out whether we actually need $\FF_{\smt}$ and/or $\FF_{\anon}$ for the sake of privacy (currently we do not use them).}
+Additionally, we use the secure transmission functionality $\FF_{\smt}$, as defined in 
+\cite{canetti}, which ensures that the adversary change the content of the messages.
+
+\TODOE{Figure out whether we actually need $\FF_{\smt}$ and/or $\FF_{\anon}$ for the sake of 
+privacy (currently we only use $\FF_{\smt}$ in our lock ideal functionality 
+$\FF_{\mathsf{MPMHL}}$).}
 %\MESSAGEP{Do we really need $\FF_{\anon}$?}
 %\MESSAGEE{I think you use anonymous communication channel in your constructions in the CCS paper when senders sends data to the intermediaries and the receiver. Since the sender knows and prepares the whole path, you need to use it there to achieve any meaningful anonymity at all. However, in our case the sender does not know the whole path, so only talks with the receiver and its direct neighbors. Therefore, we may not need to use anonymous communication channel. But, we need to further discuss this to clarify what form of anonymity we are aiming for and achieving and whether we need anonymous communication channels to realize them.}
 %Furthermore, we assume existence of an anonymous communication channel as defined in 
@@ -53,7 +58,7 @@ in \cite{mpvsc}.
 
 \paragraph{Payment Channel and Ledger Functionality}
 We make use of the payment channel functionality defined in \MESSAGEE{Generalized Bitcoin-Compatible Channels paper}, which we denote here as $\FF_{\GC}$. This ideal 
-functionality uses internally a ledger functionality define in GUC and denoted as $\LL$.
+functionality uses internally a ledger functionality define in GUC and denoted as $\FF_\LL$.
 It maintains a transaction set $\mathtt{TX}$, which stores all the transactions that have 
 happened. Furthermore, $\FF_{\GC}$ maintains a set $\Gamma$, where it stores the active 
 channels in their latest state. $\FF_{\GC}$ defines a channel $\gamma$ as an attribute tuple 
@@ -116,23 +121,22 @@ structures:
 %the payment operation. Our data structures are defined as follows:
 
 \begin{itemize}
-	\item List $\DD$, which records all off-chain transactions related data per multi-path 
+	\item List $\DD$, which records all off-chain transaction related data per multi-path 
 	payment. Each entry of $\DD$ is indexed by a user identifier $U$, and the entries have the 
 	format $(\gamma_i,U_i,v_i,t_i)$, where $\gamma_i$ is the channel between user $U$ and $U_i$, 
 	$U_i$ is the identifier of the payer, $v_i$ is the payment value, and $t_i$ is the 
 	associated timeout. More precisely, $\DD[U]$ stores data related to all transactions, 
 	where $U$ is the payee of the transaction. 
-	\item List $\HH$, which keeps track of off-chain transaction identifiers. Similar to 
-	the list $\DD$ it is also indexed by a user identifier, however, unlike list $\DD$ it 
-	does not store the transaction data, and just stores the identifiers. More precisely, 
-	$\HH[U]$ refers to all transaction identifiers $h$ in the current multi-path payment, 
-	where $U$ is either the payer or payee of the transaction.
+	\item List $\LL$, which keeps track of lock identifiers. Similar to the list $\DD$ it is 
+	also indexed by a user identifier. More precisely, $\HH[U]$ refers to all lock identifiers 
+	$\lid$ in the current multi-path payment, where $U$ is either the left or right party of 
+	the lock.
 	\item List $\RR$, which keeps track of all the users to whom a user $U$ pays. Similar to 
 	the previous lists, it is also indexed by a user identifier, and every entry is a set 
 	of other user identifiers. More precisely, $\RR[U]$ is the set of all the users with 
 	whom $U$ has a transaction, and in that transaction $U$ is the payer.
 	\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
-	receive during a multi-path payment. Similar to lists $\DD$ and $\HH$ it is indexed 
+	receive during a multi-path payment. Similar to the previous lists, it is also indexed 
 	by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
 	user $U$ is supposed to receive after a successful execution of a multi-path payment.
 	\item List $\UU$, which keeps track of all the users involved in the multi-path payment.
@@ -144,25 +148,25 @@ structures:
 \MESSAGEE{Operations paragraph is obsolete for now, and will be updated once we decide on 
 the final version of the ideal functionality.}
 \paragraph{Operations}
-In \cref{fig:ideal-mppcn} we describe the interactions between $\FF_{\mathsf{MPPCN}}$ and the 
-users of the PCN. The execution starts with $\FF_{\mathsf{MPPCN}}$ initializing a local empty 
-set $\CC$, and empty list $\LL$. Users of the PCN can query $\FF_{\mathsf{MPPCN}}$ on $\open$ 
-interface to open new payment channels, and query on $\close$ interface to close them to any 
-valid state that is in $\LL$. The multi-path payment operation is initiated with a call to 
-$\mathsf{pay}$ interface by user $U_s$ (sender) on input a payment value $v$ and receiver 
-identifier $U_r$. Then, $\FF_{\mathsf{MPPCN}}$ checks whether all the channels on the paths 
-have enough capacity and whether the intermediaries allow the payments. If these conditions are 
-satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once the payment has 
-reached the receiver, each user can again decide to interrupt the flow of the payment or not 
-(step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes that the operation was 
-successful, and adds the updated channel states to $\LL$ (step 3).
+%In \cref{fig:ideal-mppcn} we describe the interactions between $\FF_{\mathsf{MPPCN}}$ and the 
+%users of the PCN. The execution starts with $\FF_{\mathsf{MPPCN}}$ initializing a local empty 
+%set $\CC$, and empty list $\LL$. Users of the PCN can query $\FF_{\mathsf{MPPCN}}$ on $\open$ 
+%interface to open new payment channels, and query on $\close$ interface to close them to any 
+%valid state that is in $\LL$. The multi-path payment operation is initiated with a call to 
+%$\mathsf{pay}$ interface by user $U_s$ (sender) on input a payment value $v$ and receiver 
+%identifier $U_r$. Then, $\FF_{\mathsf{MPPCN}}$ checks whether all the channels on the paths 
+%have enough capacity and whether the intermediaries allow the payments. If these conditions are 
+%satisfied $\FF_{\mathsf{MPPCN}}$ initiates the multi-path payment (step 1). Once the payment has 
+%reached the receiver, each user can again decide to interrupt the flow of the payment or not 
+%(step 2). Lastly, $\FF_{\mathsf{MPPCN}}$ informs the involved nodes that the operation was 
+%successful, and adds the updated channel states to $\LL$ (step 3).
 
 \begin{figure*}[!t]
 \centering
 \fbox{\parbox{\textwidth}{
 
 %\textbf{Open Channel:} On input $(\open, \sid, c_{\langle U,U' \rangle}, v, U', t, f)$ from a 
-%user $U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed	 (i.e., contains valid 
+%user $U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed (i.e., contains valid 
 %identifiers and it is not a duplicate), and sends $(c_{\langle U,U' \rangle}, v, t, f)$ 
 %to $U'$ and $\sdv$, where $U'$ can either abort or authorize the operation. In the latter case, 
 %$\FF$ appends the tuple $(c_{\langle U,U' \rangle}, v, t, f)$ to $\BB$ via $\FF_{\BB}$ and 
@@ -177,107 +181,110 @@ successful, and adds the updated channel states to $\LL$ (step 3).
 %$\BB$ via $\FF_{\BB}$ and adds $c_{\langle U,U' \rangle}$ to $\CC$. Lastly, $\FF$ sends 
 %$(c_{\langle U,U' \rangle}, \bot, h)$ to $U, U'$ and $\sdv$. \\
 
-\textbf{Multi-Path Payment:} On input $(\mathsf{pay}, U_r, v, \{(\cid_s^1, U_s^1,v_s^1,t_s^1),
+\textbf{Multi-Path Payment:} On input $(\mathsf{Pay}, U_r, v, \{(\cid_s^1, U_s^1,v_s^1,t_s^1),
 \ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\})$ from a user $U_s$, $\FF$ proceeds 
 as follows 
 \begin{itemize}[label=-]
-	\item Initializes the queue $\QQ$, set $\JJ$ and lists $\DD, \HH, \RR, \VV, \UU$ as empty.
-	\item If the input set of $U_s$ is empty or $\sum_{i=1}^{k_s} v_s^i < v$, then $\FF$ aborts.
+	\item Initializes the queue $\QQ$, set $\JJ$ and lists $\DD, \LL, \RR, \VV, \UU$ as empty.
+	\item If the input set of $U_s$ is empty or $\textstyle\sum_{i=1}^{k_s} v_s^i < v$, then 
+	$\FF$ aborts.
 	\item Otherwise, for all $i \in [1,k_s]$, it enqueues $(\cid_s^i, U_s,U_s^i,v_s^i,t_s^i)$ 
 	to $\QQ$, adds $U_s^i$ to $\RR[U_s]$ and $U_s$ to $\UU$.
+	\item Sends \NEWE{$(\mathsf{InitRoute},U_r)$ to $\sdv$}.
+	\item Receives $\vec{\id} := (\id_1(U_r),\ldots,\id_k(U_r))$ from $\sdv$.
+	\item Sends \NEWE{$(\Setup,U_r,v)$ to $\sdv$}.
+	\item Receives $(\vec{\ell},\vec{\td})$ from $\sdv$.
 \end{itemize}
- 
+
 Next, $\FF$ executes the following interactive protocol:
 
 \begin{enumerate}
-%	\item For all $i \in \{0,\ldots,n\}$, $\FF$ sets $v_i = \VV[U_i]$, sends $(\mathsf{split-}
-%	\mathsf{req}, \sid, \NEWE{U_{n+1}}, v_i)$ to $U_i$ and $\sdv$ \MESSAGEP{$\sdv$ would need to know $U_i$ also, right?} \TODOE{Ask Daniel about this.}, where $U_i$ replies with $(\mathsf{split}, 
-%	\sid, \{(U_i^1,v_i^1,t_i^1),\ldots,(U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$ for $1 \leq k_i 
-%	\leq n$. If the set is empty, 
-%	then $\FF$ aborts. Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ samples a 
-%	random $h_i^j$, and parses $\BB$ via $\FF_{\BB}$ for an entry of the form $(c_{\langle U_i,U_i^j \rangle}, 
-%	v^*, t^*, f^*)$.  If such an entry exists, then $\FF$ sends the tuple $(h_i^j, c_{\langle 
-%	U_i,U_i^j \rangle}, v_i^j, t_i^j)$ to the user $U_i^j$ \REMOVEE{via an anonymous communication 
-%	channel} and notifies $\sdv$, where $U_i^j$ replies either with $\top$ or $\bot$. In the 
-%	latter case, $\FF$ aborts. Otherwise, $\FF$ adds $h_i^j$ to $\HH[U_i]$, sets $\VV[U_i^j] 
-%	= \VV[U_i^j] + v_i^j$, and checks whether for all entries of the form $(c_{\langle U_i,U_i^j 
-%	\rangle}, v^*, \cdot, \cdot) \in \LL$, it holds that $v^* \geq v_i^j$. If this is the case 
-%	$\FF$ adds $d_i^j = (c_{\langle U_i,U_i^j \rangle},v^* - v_i^j, t_i^j, \bot)$ to $\DD[U_i]$, 
-%	where $(c_{\langle U_i,U_i^j \rangle}, v^*, \cdot, \cdot) \in \LL$ is the entry with the 
-%	lowest $v^*$. Lastly, if any of the conditions above is not met or $\VV[U_{n+1}] \neq v$, 
-%	then $\FF$ aborts.
 	
 	\item While $\QQ$ is not empty, $\FF$ does the following
 	\begin{itemize}[label=-]
 		\item Dequeues an element $(\cid_i,U^*,U_i,v_i,t_i)$ from $\QQ$.
-		\item Adds $U_i$ to $\UU$, and samples a random identifier $h_i$.
-		\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{get}\mathsf{-channel}, \cid_i)$}.
-		\item If a channel with identifier $\cid_i$ does not exists, then $\FF_{\GC}$ return 
-		$\bot$, and $\FF$ aborts.
-		\item Otherwise, $\FF_{\GC}$ returns the channel $\gamma_i$, where $\gamma_i.\cid = 
-		\cid_i$.
-		\item Sends the tuple $(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$. \MESSAGEE{Shall we instead do a lock here?}
-		\item $U_i$ replies either with $\top$ or $\bot$, and in the latter case, $\FF$ aborts.
-		\item Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] 
-		+ v_i$, and checks if $\gamma_i.\cash \geq v_i$.
-		\item If this is the case, $\FF$ adds $d_i = (\gamma_i,U^*,v_i,t_i)$ to $\DD[U_i]$, 
-		otherwise, $\FF$ aborts.
+		\item Adds $U_i$ to $\UU$.
+		\item Sends \NEWE{$(\mathsf{GetChannel}, \cid_i)$ to $\sdv$}.
+		\item Receives $\gamma_i$ from $\sdv$.
+		\item If $\gamma_i = \bot$ or $\gamma_i.\cid \neq \cid_i$ or $\gamma_i.\cash < v_i$, 
+		then $\FF$ aborts.
+		%\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{get}\mathsf{-channel}, \cid_i)$}.
+		%\item If a channel with identifier $\cid_i$ does not exists, then $\FF_{\GC}$ return 
+		%$\bot$, and $\FF$ aborts.
+		%\item Otherwise, $\FF_{\GC}$ returns the channel $\gamma_i$, where $\gamma_i.\cid = 
+		%\cid_i$.
+		\item Sends \NEWE{$(\Lock,U_r,\vec{\ell},U_i,v_i)$ to $\sdv$}.
+		\item Receives $b$ from $\sdv$.
+		\item If $b = \bot$, then $\FF$ aborts.
+		\item Otherwise, $\FF$ adds $\lid_i$ to $\LL[U^*]$ and $\LL[U_i]$, and sets $\VV[U_i] = 
+		\VV[U_i] + v_i$.
+		%\item Sends the tuple $(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$. \MESSAGEE{Shall we instead do a lock here?}
+		%\item $U_i$ replies either with $\top$ or $\bot$, and in the latter case, $\FF$ aborts.
+		%\item Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$.
+		\item Adds $d_i = (\gamma_i,U^*,v_i,t_i)$ to $\DD[U_i]$.
 		\item If $U_i = U_r$, then $\FF$ continues with the next iteration of the loop.
-		\item Otherwise, $\FF$ sends $(\mathsf{split}\mathsf{-req}, \NEWE{U_r}, v_i)$ to $U_i$ 
-		and $\sdv$. \MESSAGEE{Call routing ideal functionality here.}
-		\item $U_i$ replies with $(\mathsf{split}, \{(\cid_i^1,U_i^1,v_i^1,t_i^1),\ldots,
+		\item Sends \NEWE{$(\mathsf{NextHops}, \vec{\id})$ to $\sdv$}.
+		\item Receives $(U_i^1,\ldots,U_i^n)$ from $\sdv$.
+		\item Sends $(\mathsf{SplitRequest}, (U_i^1,\ldots,U_i^n), v_i)$ to $U_i$ 
+		and $\sdv$.
+		\item $U_i$ replies with $(\mathsf{Split}, \{(\cid_i^1,U_i^1,v_i^1,t_i^1),\ldots,
 		(\cid_i^{k_i},U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$.
 		\item Then, for all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
 		$(\cid_i^j,U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
 	\end{itemize}
 	
-	\MESSAGEE{Using a queue we may end up having circles. I believe one can have them in practice too.}
-	
-%	\item For all $i \in \{n+1,\ldots,1\}$, $\FF$ sends $U_i$ with $\HH[U_i]$ \REMOVEE{through an 
-%	anonymous communication channel}, and notifies $\sdv$. Each user can reply either with 
-%	$\top$ or $\bot$. If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$.
-	
 	\item If $\VV[U_r] \neq v$, then $\FF$ aborts. Otherwise, for all $i \in \{|\UU|,\ldots,1\}$, 
 	$\FF$ does the following
 	\begin{itemize}[label=-]
-		\item Queries $U_i$ from $\UU$ with $\HH[U_i]$, and notifies $\sdv$.
-		\item $U_i$ replies either with $\top$ or $\bot$.
-		\item If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$. 
-		\item Otherwise, $\FF$ continues.
-	\end{itemize}
-	
-%	\item For all $i \in \{n,\ldots,0\}$, $\FF$ parses the entries of $\DD[U_i]$ as 
-%	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, \bot)$, and creates a set 
-%	$\mathcal{R}$, which is composed of all user identifiers $U_i^j$. Next, $\FF$ checks 
-%	whether $\mathcal{R} \subseteq \JJ$. If this is the case, then $\FF$ adds $U_i$ to $\JJ$, 
-%	and sends $(\bot, h_i^j)$ to $U_i$ and $\sdv$. Otherwise, $\FF$ updates $d_i^j$ as 
-%	$d_i^j = (c_{\langle U_i,U_i^j \rangle}, v', t_i^j, h_i^j)$, adds $d_i^j$ to $\LL$, and 
-%	sends $(\top, h_i^j)$ to $U_i$ and $\sdv$.
-	
-	\item For all $i \in \{|\UU|,\ldots,1\}$, $\FF$ does the following 
-	\begin{itemize}[label=-]
-		\item Checks if $\RR[U_i] \subseteq \JJ$ for $U_i$ from $\UU$.
-		\item If this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, \HH[U_i])$ 
-		to $U_i$ and $\sdv$.
+		\item Queries $U_i$ from $\UU$ with $\LL[U_i]$, and notifies $\sdv$.
+		\item $U_i$ replies with $b$, and if $b = \bot$, then $\FF$ add $U_i$ to $\JJ$ and sends
+		$(\LL[U_i],\bot)$ to $U_i$ and $\sdv$. 
+		\item If $\RR[U_i] \subseteq \JJ$ and $U_i \not\in \JJ$, then $\FF$ adds $U_i$ to $\JJ$, 
+		and sends $(\LL[U_i],\bot)$ to $U_i$ and $\sdv$.
 		\item Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ does the following
 		\begin{itemize}[label=$\circ$]
 			\item Parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,v_j,t_j)$.
 			\item Creates $\vec{\theta} = (\theta_{U_j} := (\gamma_j.\cash - v_j, \theta_{U_j}.
-			\varphi), \theta_{U_i} := (\gamma_j.\cash + v_j, \theta_{U_i}.\varphi)$. \TODOP{How to write the conditions here?}
-			\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{update},\gamma_j.\cid,
-			\vec{\theta},t_j)$}. \MESSAGEE{This call fails if there is not enough capacity in the channel or any other reason?}
-			\item If the call to $\FF_{\GC}$ succeeds, then $\FF$ sends $(\top, \HH[U_i])$ to 
-			$U_i$ and $\sdv$.
-			\item Otherwise, $\FF$ sends $(\bot, \HH[U_i])$ to $U_i$ and $\sdv$.
+			\varphi), \theta_{U_i} := (\gamma_j.\cash + v_j, \theta_{U_i}.\varphi)$. 
+			\TODOP{How to write the conditions here?}
+			\item Sends \NEWE{$(\mathsf{Update},\gamma_j.\cid,\vec{\theta},t_j)$ to $\sdv$}.
+			\item Receives $b$ from $\sdv$.
+			\item If $b = \bot$, then $\FF$ sends $(\LL[U_i], \bot)$ to $U_i$ and $\sdv$.
+			\item Otherwise, $\FF$ sends $(\LL[U_i], \top)$ to $U_i$ and $\sdv$.
 		\end{itemize}
 	\end{itemize}
+	
+%	\item If $\VV[U_r] \neq v$, then $\FF$ aborts. Otherwise, for all $i \in \{|\UU|,\ldots,1\}$, 
+%	$\FF$ does the following
+%	\begin{itemize}[label=-]
+%		\item Queries $U_i$ from $\UU[i]$ with $\LL[U_i]$, and notifies $\sdv$.
+%		\item $U_i$ replies either with $\top$ or $\bot$.
+%		\item If $U_i$ replies with $\bot$, then $\FF$ add $U_i$ to $\JJ$. 
+%		\item Otherwise, $\FF$ continues.
+%	\end{itemize}
+%	
+%	
+%	\item For all $i \in \{|\UU|,\ldots,1\}$, $\FF$ does the following 
+%	\begin{itemize}[label=-]
+%		\item Checks if $\RR[U_i] \subseteq \JJ$ for $U_i$ from $\UU$.
+%		\item If this is the case, then $\FF$ adds $U_i$ to $\JJ$, and sends $(\bot, \HH[U_i])$ 
+%		to $U_i$ and $\sdv$.
+%		\item Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ does the following
+%		\begin{itemize}[label=$\circ$]
+%			\item Parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,v_j,t_j)$.
+%			\item Creates $\vec{\theta} = (\theta_{U_j} := (\gamma_j.\cash - v_j, \theta_{U_j}.
+%			\varphi), \theta_{U_i} := (\gamma_j.\cash + v_j, \theta_{U_i}.\varphi)$. \TODOP{How to write the conditions here?}
+%			\item Queries $\FF_{\GC}$ with \NEWE{$(\mathsf{update},\gamma_j.\cid,
+%			\vec{\theta},t_j)$}. \MESSAGEE{This call fails if there is not enough capacity in the channel or any other reason?}
+%			\item If the call to $\FF_{\GC}$ succeeds, then $\FF$ sends $(\top, \HH[U_i])$ to 
+%			$U_i$ and $\sdv$.
+%			\item Otherwise, $\FF$ sends $(\bot, \HH[U_i])$ to $U_i$ and $\sdv$.
+%		\end{itemize}
+%	\end{itemize}
 \end{enumerate}
 }}
 
 \TODOP{I didn't fully get all the details. Revisit}
-
-\MESSAGEP{We wanted to \emph{merge} PCN and Lock functionalities, right?}
-\MESSAGEE{If we include the lock interfaces here, it means that the only way to realize a PCN is through a protocol that realizes the lock ideal functionality. Instead we can keep it more generic (like it is now) I guess.}
 
 \caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the $(\FF_{\GC}, \FF_{\mathsf{GDC}})$-
 hybrid model}
@@ -294,9 +301,10 @@ $\FF_{\mathsf{MPPCN}}$ functionality.
 Balance security roughly means that an intermediary receives \emph{at least} as many coins as 
 it forwards, and that it can pull its coins as soon as \emph{at least} one of its right 
 neighbors has pulled. We assume that the first part of this property is enforced by the 
-environment by making sure that the when a user splits, it cannot split to a value more than it 
-is supposed to receive. \TODOE{Use a wrapper around our ideal functionality to make sure that environment restricts certain actions.} The second part is achieved 
-in step 3 of $\mathsf{pay}$ interface, which guarantees that the only way a payment will fail 
+environment by considering rational users, which when they splits, they do not split to a 
+total value that is more than they are supposed to receive. \MESSAGEE{We can make an explicit 
+check for this in the ideal functionality.} The second part is achieved in step 2 of 
+$\mathsf{Pay}$ interface, which guarantees that the only way a payment will fail 
 for a user is if all of its right neighbors have aborted. Hence, the user has no one right 
 neighbor that pulled.
 

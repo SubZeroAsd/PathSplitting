@@ -75,22 +75,22 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \begin{figure*}[tb]
 \centering
 \fbox{\procedure{}{
-	\< \mathsf{lock}_{U_i}(m): \< \\[][\hline]
+	\< \Lock_{U_i}(m): \< \\[][\hline]
 	\< \text{Parse } m \text{ as } (U_r,\vec{\ell},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\}) \< \\ [-0.15\baselineskip][]
 	\< \text{Initialize } \vec{w} = \emptyset \< \\ [-0.15\baselineskip][]
 	\< \pcfor j \pcin \{1..k_i\} \pcdo \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{get}\mathsf{-channel},\cid_i^j) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{GetChannel},\cid_i^j) \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Receive } \gamma_j \text{ from } \FF_{\GC} \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif \gamma_j = \bot \textbf{ or } \gamma_j.\cash < v_i^j \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcreturn \bot \< \\ [-0.15\baselineskip][] 
 	\< \pcind \pcelse \< \\ [-0.15\baselineskip][] 
-	\< \pcind \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{lock},U_r,\vec{\ell},U_i^j,v_i^j) \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Lock,U_r,\vec{\ell},U_i^j,v_i^j) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \text{Receive } (\mathsf{lock},U_i^j,\vec{w}_i^j) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \REMOVEE{U_i^j \text{ receives } (\mathsf{lock},U_i,(U_r,\vec{\ell}_i^j,v_i^j)) \text{ from } \FF_{\mathsf{MPHML}}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcif \vec{w}_i^j = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcind \pcreturn \bot \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \text{Create } \vec{\theta} = (\theta_{U_i} := (\gamma_j.\cash - v_i^j, \theta_{U_i}.\varphi), \theta_{U_i^j} := (\gamma_j.\cash + v_i^j, \theta_{U_i^j}.\varphi) \TODOP{How to write the conditions?} \< \\ [-0.15\baselineskip][]
-	\< \pcind \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{update},\gamma_j.\cid,
+	\< \pcind \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{Update},\gamma_j.\cid,
 			\vec{\theta},t_i^j) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \text{Receive } b \text{ from } \FF_{\GC} \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcif b = \bot \pcthen \< \\ [-0.15\baselineskip][]
@@ -107,12 +107,14 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \begin{figure*}[tb]
 \centering
 \fbox{\procedure{}{
-	\< \mathsf{pay}_{U_s}(m): \< \\[][\hline]
+	\< \mathsf{Pay}_{U_s}(m): \< \\[][\hline]
 	\< \text{Parse } m \text{ as } (U_r,v,\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s}, U_s^{k_s},v_s^{k_s},t_s^{k_s})\}) \< \\ [-0.15\baselineskip][]
-	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{setup},U_r,v) \< \\ [-0.15\baselineskip][]
+	\< \pcif \textstyle\sum_{i = 1}^{k_s} v_s^i < v \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcabort \< \\ [-0.15\baselineskip][]
+	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Setup,U_r,v) \< \\ [-0.15\baselineskip][]
 	\< U_s \text{ receives } (\mathsf{setup},U_r,(\vec{\ell}, \vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
 	\< \REMOVEE{U_r \text{ receives } (\mathsf{setup},U_s,(v,\vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
-	\< \text{Compute } \vec{w}_s \gets \mathsf{lock}_{U_s}((U_r,\vec{\ell},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s},U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
+	\< \text{Compute } \vec{w}_s \gets \Lock_{U_s}((U_r,\vec{\ell},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s},U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcif \vec{w}_s = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \text{Store } \vec{w}_s
@@ -125,7 +127,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \begin{figure*}[tb]
 \centering
 \fbox{\procedure{}{
-	\< \mathsf{pay}_{U_r}(m): \< \\[][\hline]
+	\< \mathsf{Pay}_{U_r}(m): \< \\[][\hline]
 	\< \text{Parse } m \text{ as } (\textit{operation}, U^*, m^*) \< \\ [-0.15\baselineskip][]
 	\< \pcif \textit{operation} = \mathsf{setup} \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Parse } m^* \text{ as } (v,\vec{\td}) \text{ and store } (v,\vec{\td}) \< \\ [-0.15\baselineskip][]
@@ -134,7 +136,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Parse } m^* \text{ as } \vec{\ell}_j \textcolor{blue}{\text{ and set } \vec{\ell} = \vec{\ell} \cup \vec{\ell}_j} \< \\ [-0.15\baselineskip][]
 	\< \textcolor{blue}{\pcind \pcif |\vec{\ell}| \neq v \pcthen \pcabort} \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{extract},\vec{\ell}_j,\vec{\td}) \textcolor{blue}{~(\text{or on } (\mathsf{extract},\vec{\ell},\vec{\td}))} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Extract,\vec{\ell}_j,\vec{\td}) \textcolor{blue}{~(\text{or on } (\Extract,\vec{\ell},\vec{\td}))} \< \\ [-0.15\baselineskip][]
 	\< \pcind \REMOVEE{U^* \text{ receives } (\lid_i,k_i) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
 	\< \pcind U_r \text{ receives } b \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][] 
 	\< \pcind \pcif b = \bot \pcthen \< \\ [-0.15\baselineskip][]
@@ -151,15 +153,18 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 \begin{figure*}[tb]
 \centering
 \fbox{\procedure{}{
-	\< \mathsf{pay}_{U_i}(m): \< \\[][\hline]
+	\< \mathsf{Pay}_{U_i}(m): \< \\[][\hline]
 	\< \text{Parse } m \text{ as } (\textit{operation}, U^*, m^*) \< \\ [-0.15\baselineskip][]
 	\< \pcif \textit{operation} = \mathsf{lock} \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif m^* = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Parse } m^* \text{ as } (U_r,\vec{\ell}_i,v_i) \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Query } \MESSAGEE{routing ideal functionality} \text{ on } (\mathsf{get}\mathsf{-split},U_r,v_i) \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Receive } \{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\} \text{ from } \MESSAGEE{routing ideal functionality} \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Compute } \vec{w}_i \gets \mathsf{lock}_{U_i}((U_r,\vec{\ell}_i,\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\})) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\mathsf{route}} \text{ on } (\mathsf{InitRoute},U_r) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Receive } \vec{\id} := (\id_1(U_r),\ldots,\id_k(U_r)) \text{ from } \FF_{\mathsf{route}} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\mathsf{route}} \text{ on } (\mathsf{NextHops},\vec{\id}) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Receives } (U_i^1,\ldots,U_i^n) \text{ from } \FF_{\mathsf{routes}} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Compute } \{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\} \gets \mathsf{GetSplit((U_i^1,\ldots,U_i^n),v_i)} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Compute } \vec{w}_i \gets \Lock_{U_i}((U_r,\vec{\ell}_i,\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif \vec{w}_i = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Set } \vec{w} = \vec{w} \cup \vec{w}_i \text{ and } \vec{\ell} = \vec{\ell} \cup \vec{\ell}_i \< \\ [-0.15\baselineskip][]
@@ -169,7 +174,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Parse } m^* \text{ as } (\lid_i, k_i) \text{ and set } \vec{k} = \vec{k} \cup \{k_i\} \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Set } \lid_{i-1} \gets \mathsf{getLeftLock}(\lid_i) \text{ and } w_i \gets \mathsf{getWitness}(\lid_i) \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\mathsf{release},\lid_{i-1},k_i,w_i) \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Release,\lid_{i-1},k_i,w_i) \< \\ [-0.15\baselineskip][]
 	\< \pcind U_i \text{ receives } b \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif b = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
@@ -378,3 +383,6 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\caption{Algorithms and protocols for the hash-based multiple trapdoor construction.}
 	\label{fig:single-trapdoor}
 \end{figure*}
+
+\MESSAGEE{If we do not use an encryption, it can be the case that an intermediary receives 
+all the locks, and hence can reconstruct the trapdoor using the shares sent along the locks.}
