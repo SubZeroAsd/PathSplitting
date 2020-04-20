@@ -255,16 +255,14 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\item Generate the public parameters $(q, e, \GG_1, \GG_2, \GG_T, g_1, g_2, g_T) 
 				\gets \BilGen(1^\lambda)$
 				\item Sample $(x_1,\ldots,x_v,y) \sample \ZZ_q^{v+1}$
-				\item Sample $(\sk_t,\pk_t) \sample \kgen(1^\lambda)$
-				\item Secret share $\sk_t$ as $([sk_t]_1,\ldots,[sk_t]_v)$
-				\item Compute $c_t \gets \enc(\pk_t, x_1 \concat \cdots \concat x_v)$
-				\item Compute $(c_s^{(1)},\ldots,c_s^{(v)}) \gets (\enc(\pk_{U_r},[sk_t]_1),
-				\ldots,\enc(\pk_{U_r},[sk_t]_v))$
+				\item Compute $x \gets x_1 + \cdots + x_v \Mod{q}$
+				\item Compute $(c_x^{(1)},\ldots,c_x^{(v)}) \gets (\enc(\pk_{U_r},x_1),
+				\ldots,\enc(\pk_{U_r},x_v))$
 				\item Compute $(\ell_1,\ldots,\ell_v) \gets ((\ell_1^{(1)},\ell_1^{(2)},
 				\ell_1^{(3)}),\ldots,(\ell_v^{(1)},\ell_v^{(2)},\ell_v^{(3)}))$, where for all 
-				$i \in [1,v]$, $\ell_i^{(1)} \gets g_1^{x_i y}$, $\ell_i^{(2)} \gets g_T^y$ and 
-				$\ell_i^{(3)} := c_s^{(i)}$
-				\item Set $\vec{\td} := (c_t,v)$ and $\vec{\ell} := (\ell_1,\ldots,\ell_v)$
+				$i \in [1,v]$, $\ell_i^{(1)} \gets g_1^{x y}$, $\ell_i^{(2)} \gets g_T^y$ and 
+				$\ell_i^{(3)} := c_x^{(i)}$
+				\item Set $\vec{\td} := \bot$ and $\vec{\ell} := (\ell_1,\ldots,\ell_v)$
 				\item $\pcreturn (v,\vec{\td})$ to $U_r$ and $(\vec{\ell},\vec{\td})$ to $U_s$
 			\end{itemize}
 			\underline{$\langle \Lock_{U_i}(U_r, \vec{\ell},U_j,v_j)\}), \Lock_{U_j}()
@@ -284,20 +282,19 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\item $\pcreturn (U_r,\vec{\ell}_j,v_j)$ to $U_j$ and $\vec{w}$ to $U_i$
 			\end{itemize}
 			\underline{$\Extract(\vec{\ell}, \vec{\td})$}: On input a vector of locks 
-			$\vec{\ell} := (\ell_1,\ldots,\ell_j)$, a vector of trapdoors $\vec{\td} := (c_t,v)$, 
+			$\vec{\ell} := (\ell_1,\ldots,\ell_j)$, a vector of trapdoors $\vec{\td} := \bot$, 
 			the algorithm returns $\bot$ if $|\vec{\ell}| \neq v$. Otherwise, it proceeds as 
 			follows:
 			\begin{itemize}[label=-]
 				\item Initialize an empty vector $\vec{k}$
 				\item $\pcfor i \pcin \{1..v\} \pcdo$
 				\item $\pcind$Parse $\ell_i$ as $(\ell_i^{(1)},\ell_i^{(2)},\ell_i^{(3)})$
-				\item $\pcind$Compute $[sk_t]_i \gets \dec(\sk_{U_r},\ell_i^{(3)})$
-				\item Reconstruct $\sk_t$ from $([sk_t]_1,\ldots,[sk_t]_v)$
-				\item Compute $x \gets \dec(\sk_t,c_t)$ and parse it as $(x_1,\ldots,x_v)$
+				\item $\pcind$Compute $x_i \gets \dec(\sk_{U_r},\ell_i^{(3)})$
+				\item Compute $x \gets x_1 + \cdots + x_v \Mod{q}$
 				\item $\pcfor i \pcin \{1..v\} \pcdo$
 				\item $\pcind$Parse $\ell_i$ as $(\ell_i^{(1)},\ell_i^{(2)},\ell_i^{(3)})$
-				\item $\pcind \pcif e((\ell_i^{(1)})^{x_i^{-1}}, g_2) = \ell_i^{(2)} \pcthen$
-				\item $\pcind \pcind$Set $k_i = (\ell_i^{(1)})^{x_i^{-1}}$ and add $k_i$ into 
+				\item $\pcind \pcif e((\ell_i^{(1)})^{x^{-1}}, g_2) = \ell_i^{(2)} \pcthen$
+				\item $\pcind \pcind$Set $k_i = (\ell_i^{(1)})^{x^{-1}}$ and add $k_i$ into 
 				$\vec{k}$
 				\item $\pcind \pcelse$Add $\bot$ to $\vec{k}$
 				\item $\pcreturn \vec{k}$
