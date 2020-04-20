@@ -197,7 +197,8 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\item Sample $(x,y) \sample \ZZ_q^2$
 				\item Compute $\ell_1^{(1)} \gets g_1^{xy}$, $\ell_1^{(2)} \gets g_T^y$ and 
 				set the lock $\ell_1 := (\ell_1^{(1)},\ell_1^{(2)})$
-				\item $\pcreturn \vec{\td} := (x)$ to $U_r$ and $\vec{\ell} := (\ell_1)$ to $U_s$
+				\item Set $\vec{\td} := (x)$ and $\vec{\ell} := (\ell_1)$
+				\item $\pcreturn (v,\vec{\td})$ to $U_r$ and $(\vec{\ell},\vec{\td})$ to $U_s$
 			\end{itemize}
 			\underline{$\langle \Lock_{U_i}(U_r, \vec{\ell},U_j,v_j)\}), \Lock_{U_j}()
 			\rangle$}: On input a receiver identifier $U_r$, vector of locks $\vec{\ell}$, 
@@ -262,9 +263,9 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\item Compute $(\ell_1,\ldots,\ell_v) \gets ((\ell_1^{(1)},\ell_1^{(2)},
 				\ell_1^{(3)}),\ldots,(\ell_v^{(1)},\ell_v^{(2)},\ell_v^{(3)}))$, where for all 
 				$i \in [1,v]$, $\ell_i^{(1)} \gets g_1^{x_i y}$, $\ell_i^{(2)} \gets g_T^y$ and 
-				$\ell_i^{(2)} := c_s^{(i)}$
-				\item $\pcreturn \vec{\td} := (c_t,v)$ to $U_r$ and $\vec{\ell} := 
-				(\ell_1,\ldots,\ell_v)$ to $U_s$
+				$\ell_i^{(3)} := c_s^{(i)}$
+				\item Set $\vec{\td} := (c_t,v)$ and $\vec{\ell} := (\ell_1,\ldots,\ell_v)$
+				\item $\pcreturn (v,\vec{\td})$ to $U_r$ and $(\vec{\ell},\vec{\td})$ to $U_s$
 			\end{itemize}
 			\underline{$\langle \Lock_{U_i}(U_r, \vec{\ell},U_j,v_j)\}), \Lock_{U_j}()
 			\rangle$}: On input a receiver identifier $U_r$, vector of locks $\vec{\ell}$, 
@@ -308,6 +309,67 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$ and a key $k$, 
 			parse $\ell$ as $(\ell^{(1)},\ell^{(2)}, \ell^{(3)})$, and $\pcreturn 1$ if $e(k, g_2) \? 
 			\ell^{(2)}$ holds, and 0 otherwise.
+		\end{minipage}
+	}
+	\end{center}
+	
+	\caption{Algorithms and protocols for the multiple trapdoor construction.}
+	\label{fig:single-trapdoor}
+\end{figure*}
+
+\begin{figure*}[htb]
+	\begin{center}
+	\framebox[0.78\textwidth]{
+		\begin{minipage}[t]{0.75\textwidth}
+			\underline{{$\langle\Setup_{U_s}(1^\lambda,U_r,v),\Setup_{U_r}(1^\lambda)\rangle$}}: 
+			On input the security parameter $1^\lambda$, a receiver user identifier $U_r$, and 
+			payment value $v$, the protocol does the following:
+			\begin{itemize}[label=-]
+				\item Sample $(x_1,\ldots,x_v) \sample \ZZ_q^{v}$
+				\item Compute $BP \gets x_1 + \cdots + x_v \Mod{q}$
+				\item Compute $(c_x^{(1)},\ldots,c_x^{(v)}) \gets (\enc(\pk_{U_r},x_1),
+				\ldots,\enc(\pk_{U_r},x_v))$
+				\item Compute $(w_1,\ldots,w_v) \gets (H(BP \concat 1),\ldots,H(BP \concat v))$
+				\item Compute $(\ell_1,\ldots,\ell_v) \gets ((\ell_1^{(1)},\ell_1^{(2)}),\ldots,
+				(\ell_v^{(1)},\ell_v^{(2)}))$, where for all $i \in [1,v]$, $\ell_i^{(1)} \gets 
+				H(w_i)$ and $\ell_i^{(2)} := c_x^{(i)}$
+				\item Set $\vec{\td} := \bot$ and $\vec{\ell} := (\ell_1,\ldots,\ell_v)$
+				\item $\pcreturn (v,\vec{\td})$ to $U_r$ and $(\vec{\ell},\vec{\td})$ to $U_s$
+			\end{itemize}
+			\underline{$\langle \Lock_{U_i}(U_r, \vec{\ell},U_j,v_j)\}), \Lock_{U_j}()
+			\rangle$}: On input a receiver identifier $U_r$, vector of locks $\vec{\ell}$, 
+			payment value $v_j$ and a user identifiers $U_j$, the protocol does the following: 
+			\begin{itemize}[label=-]
+				\item Parse the vector $\vec{\ell}$ as $(\ell_1,\ldots,\ell_k)$
+				\item Initialize an empty vector $\vec{\ell}_j$
+				\item $\pcfor i \pcin \{1..v_j\} \pcdo$
+				\item $\pcind$Sample unused $\ell_i \sample \vec{\ell}$ and add $\ell_i$ into 
+				$\vec{\ell}_j$
+				\item $\pcreturn (U_r,\vec{\ell}_j,v_j)$ to $U_j$ and $\bot$ to $U_i$
+			\end{itemize}
+			\underline{$\Extract(\vec{\ell}, \vec{\td})$}: On input a vector of locks 
+			$\vec{\ell} := (\ell_1,\ldots,\ell_j)$, a vector of trapdoors $\vec{\td} := \bot$, 
+			the algorithm returns $\bot$ if $|\vec{\ell}| \neq v$. Otherwise, it proceeds as 
+			follows:
+			\begin{itemize}[label=-]
+				\item Initialize an empty vector $\vec{k}$
+				\item $\pcfor i \pcin \{1..v\} \pcdo$
+				\item $\pcind$Parse $\ell_i$ as $(\ell_i^{(1)},\ell_i^{(2)})$
+				\item $\pcind$Compute $x_i \gets \dec(\sk_{U_r},\ell_i^{(2)})$
+				\item Compute $BP \gets x_1 + \cdots x_v \Mod{q}$
+				\item $\pcfor i \pcin \{1..v\} \pcdo$
+				\item $\pcind$Set $k_i = H(BP \concat i)$ and add $k_i$ into 
+				$\vec{k}$
+				\item $\pcreturn \vec{k}$
+			\end{itemize}
+			\underline{$\Release(\ell, k, w)$}: On input a lock $\ell$, a key $k$ and 
+			a witness $w$, the algorithm proceeds as follows:
+			\begin{itemize}[label=-]
+				\item $\pcreturn k$ if $\Verify(\ell, k) = 1$, and $\bot$ otherwise
+			\end{itemize}
+			\underline{$\Verify(\ell, k)$}: On input a lock $\ell$ and a key $k$, 
+			parse $\ell$ as $(\ell^{(1)},\ell^{(2)})$, and $\pcreturn 1$ if $H(k) \? 
+			\ell^{(1)}$ holds, and 0 otherwise.
 		\end{minipage}
 	}
 	\end{center}
