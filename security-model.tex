@@ -254,7 +254,7 @@ Next, $\FF$ executes the following interactive protocol:
 		%\item Sends the tuple $(h_i, \cid_i, v_i, t_i)$ to $U_i$ and $\sdv$. \MESSAGEE{Shall we instead do a lock here?}
 		%\item $U_i$ replies either with $\top$ or $\bot$, and in the latter case, $\FF$ aborts.
 		%\item Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$.
-		\item Adds $d_i = (\gamma_i,U^*,v_i,t_i)$ to $\DD[U_i]$.
+		\item Adds $d_i = (\gamma_i,U^*,U_i,v_i,t_i)$ to $\DD[U_i]$.
 		\item If $U_i = U_r$, then $\FF$ continues with the next iteration of the loop.
 		\item Otherwise, sends \NEWE{$(\mathsf{NextHops}, \vec{\id})$ to $\sdv$}.
 		\item Receives $(U_i^1,\ldots,U_i^n)$ from $\sdv$.
@@ -277,7 +277,7 @@ Next, $\FF$ executes the following interactive protocol:
 		and sends $(\LL[U_i],\bot)$ to $U_i$ and $\sdv$.
 		\item Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ does the following
 		\begin{itemize}[label=$\circ$]
-			\item Parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,v_j,t_j)$.
+			\item Parses $d_j$ from $\DD[U_i]$ as $(\gamma_j,U_j,U_i,v_j,t_j)$.
 			\item Creates $\vec{\theta} = (\theta_{U_j} := (\gamma_j.\cash - v_j, \theta_{U_j}.
 			\varphi), \theta_{U_i} := (\gamma_j.\cash + v_j, \theta_{U_i}.\varphi)$. 
 			\TODOP{How to write the conditions here?}
