@@ -9,6 +9,12 @@ and multi-path multi-hop locks (\sysname). We make use of the universal composab
 framework of Canetti \cite{canetti}. Our ideal functionalities work in interaction with 
 a universe of users $\mathbb{U}$, and with an adversary $\sdv$.
 
+\paragraph{Notation}
+Throughout the text we use calligraphic letters (e.g., $\LL$) to denote the internal data 
+structures that are used by the ideal functionalities. We use the arrow notation to denote 
+the vectors (i.e., $\vec{v}$ means that $v$ is a vector). The vectors used here do not 
+correspond to vectors in mathematics, and instead one should think of them as lists.
+
 \paragraph{Attacker Model}
 We model parties as interactive Turing machines (ITMs), which communicate with a trusted 
 functionality $\FF$ via secure and authenticated communication channels. We model the 
@@ -37,17 +43,17 @@ We assume that the parties are connected via authenticated communication channel
 delivery of exactly one round. Hence, if a party $P$ sends a message $m$ to party $Q$ in round 
 $r$, party $Q$ receives the message at the beginning of round $r + 1$. Furthermore, $Q$ is sure 
 that the message was sent by $P$. The adversary can change the order of messages that were sent 
-in the same round, but it cannot modify, delay or drop messages sent between parties, or it 
-cannot insert a new message. For simplicity, we assume that computation is instantaneous. These 
-assumptions on the communication channels are formalized as an ideal functionality 
-$\FF_{\mathsf{GDC}}$, as defined in \cite{mpvsc}.
+in the same round, but it delay or drop messages sent between parties, or it cannot insert a 
+new message. For simplicity, we assume that computation is instantaneous. These assumptions on 
+the communication channels are formalized as an ideal functionality $\FF_{\mathsf{GDC}}$, as 
+defined in \cite{mpvsc}.
 
 Additionally, we use the secure transmission functionality $\FF_{\smt}$, as defined in 
-\cite{canetti}, which ensures that the adversary change the content of the messages.
+\cite{canetti}, which ensures that the adversary cannot change the content of the messages.
 
-\TODOE{Figure out whether we actually need $\FF_{\smt}$ and/or $\FF_{\anon}$ for the sake of 
-privacy (currently we only use $\FF_{\smt}$ in our lock ideal functionality 
-$\FF_{\mathsf{MPMHL}}$).}
+\TODOE{Figure out whether we actually need $\FF_{\smt}$ and/or $\FF_{\anon}$ (currently we only 
+use $\FF_{\smt}$ in our lock ideal functionality $\FF_{\mathsf{MPMHL}}$, and we do not use 
+$\FF_{\anon}$ at all).}
 %\MESSAGEP{Do we really need $\FF_{\anon}$?}
 %\MESSAGEE{I think you use anonymous communication channel in your constructions in the CCS paper when senders sends data to the intermediaries and the receiver. Since the sender knows and prepares the whole path, you need to use it there to achieve any meaningful anonymity at all. However, in our case the sender does not know the whole path, so only talks with the receiver and its direct neighbors. Therefore, we may not need to use anonymous communication channel. But, we need to further discuss this to clarify what form of anonymity we are aiming for and achieving and whether we need anonymous communication channels to realize them.}
 %Furthermore, we assume existence of an anonymous communication channel as defined in 
@@ -58,9 +64,9 @@ $\FF_{\mathsf{MPMHL}}$).}
 
 \paragraph{Payment Channel and Ledger Functionality}
 We make use of the payment channel functionality defined in \MESSAGEE{Generalized Bitcoin-Compatible Channels paper}, which we denote here as $\FF_{\GC}$. This ideal 
-functionality uses internally a ledger functionality define in GUC and denoted as $\FF_\LL$.
-It maintains a transaction set $\mathtt{TX}$, which stores all the transactions that have 
-happened. Furthermore, $\FF_{\GC}$ maintains a set $\Gamma$, where it stores the active 
+functionality uses internally a ledger functionality defined in GUC model and denoted as 
+$\FF_\LL$. It maintains a transaction set $\mathtt{TX}$, which stores all the transactions that 
+have happened. Furthermore, $\FF_{\GC}$ maintains a set $\Gamma$, where it stores the open 
 channels in their latest state. $\FF_{\GC}$ defines a channel $\gamma$ as an attribute tuple 
 $(\gamma.\cid, \gamma.\users, \gamma.\cash, \gamma.\st)$, where $\gamma.\cid \in \{0,1\}^*$ is 
 the channel identifier, $\gamma.\users \in \mathbb{U}^2$ defines the identities of the channel 
@@ -70,7 +76,7 @@ composed of a list of outputs. Each output $\theta_i$ has two attributes: the va
 \cash \in \mathbb{R}^{\geq 0}$, representing the amount of coins, and the function $\theta_i.
 \varphi \colon \{0,1\}^* \to \{0,1\}$, representing the spending condition of the output. 
 %For convenience, $\FF_{\GC}$ defines the function $\gamma.\otherParty \colon \gamma.\users \to 
-%\gamma.\users$ as $\gamma.\otherParty(P) = Q$ for $\gamma.\users = \{P,Q\}$.
+%\gamma.\users$ as $\gamma.\otherParty(P) = Q$ for $\gamma.\users = \{P,Q\}$. 
 
 %We assume existence of a blockchain $\BB$, modeled as a trusted append-only bulletin board. 
 %The corresponding ideal functionality $\FF_{\BB}$, as modeled in \cite{perun}, is used to 
@@ -100,18 +106,19 @@ indistinguishable.
 \label{sec:mppcn}
 
 In this section we define an ideal functionality $\FF_{\mathsf{MPPCN}}$ for MPPCNs. 
-$\FF_{\mathsf{MPPCN}}$ works in interaction with a universe of users $\mathbb{U}$, and with an 
-adversary $\sdv$. For simplicity, we only consider unidirectional channels, however, we note 
+%$\FF_{\mathsf{MPPCN}}$ works in interaction with a universe of users $\mathbb{U}$, and with an 
+%adversary $\sdv$. 
+For simplicity, we only consider unidirectional channels, however, we note 
 that our functionality can be easily extended to support bidirectional channels. 
 \MESSAGEP{We might want to do an intuitive argument of how to extend it or avoid this point.}
 \MESSAGEE{If we make use of an ideal functionality that implements bi-directional payment channel networks, then this becomes trivial, as we just use the interfaces of that ideal functionality for updates in both directions. Does $\FF_{\GC}$ support this?} 
-$\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\GC}$ and $\FF_{\mathsf{GDC}}$, 
-hence, it is defined in $(\FF_{\GC}, \FF_{\mathsf{GDC}})$-hybrid model. Furthermore, 
+%$\FF_{\mathsf{MPPCN}}$ makes use of $\FF_{\GC}$ and $\FF_{\mathsf{GDC}}$, 
+%hence, it is defined in $(\FF_{\GC}, \FF_{\mathsf{GDC}})$-hybrid model.
 $\FF_{\mathsf{MPPCN}}$ defines various data structures and operations explained below. 
 Our ideal functionality $\FF_{\mathsf{MPPCN}}$ can be seen in \cref{fig:ideal-mppcn}.
 
 \paragraph{Data Structures} 
-In order to simplify the presentation of our ideal functionality, we define several data 
+In order to simplify the presentation of our ideal functionality, we define the following data 
 structures:
 %where a data structure can be global or payment-specific. Global means that the 
 %data structure is initialized once and updated throughout the lifetime of the system, and it 
@@ -121,24 +128,24 @@ structures:
 %the payment operation. Our data structures are defined as follows:
 
 \begin{itemize}
-	\item List $\DD$, which records all off-chain transaction related data per multi-path 
+	\item List $\DD$, which records off-chain transaction related data per multi-path 
 	payment. Each entry of $\DD$ is indexed by a user identifier $U$, and the entries have the 
-	format $(\gamma_i,U_i,v_i,t_i)$, where $\gamma_i$ is the channel between user $U$ and $U_i$, 
-	$U_i$ is the identifier of the payer, $v_i$ is the payment value, and $t_i$ is the 
+	format $(\gamma_i,U_i,U,v_i,t_i)$, where $\gamma_i$ is the channel between user $U$ and 
+	$U_i$, $U_i$ is payer, $U$ is the payee, $v_i$ is the payment value, and $t_i$ is the 
 	associated timeout. More precisely, $\DD[U]$ stores data related to all transactions, 
 	where $U$ is the payee of the transaction. 
 	\item List $\LL$, which keeps track of lock identifiers. Similar to the list $\DD$ it is 
-	also indexed by a user identifier. More precisely, $\HH[U]$ refers to all lock identifiers 
-	$\lid$ in the current multi-path payment, where $U$ is either the left or right party of 
+	also indexed by a user identifier. More precisely, $\LL[U]$ refers to all lock identifiers 
+	$\lid$ in the current multi-path payment, where $U$ is either the left or right user of 
 	the lock.
-	\item List $\RR$, which keeps track of all the users to whom a user $U$ pays. Similar to 
-	the previous lists, it is also indexed by a user identifier, and every entry is a set 
-	of other user identifiers. More precisely, $\RR[U]$ is the set of all the users with 
-	whom $U$ has a transaction, and in that transaction $U$ is the payer.
+	\item List $\RR$, which keeps track of all right neighbors of a user $U$. Similar to the 
+	previous lists, it is also indexed by a user identifier, and every entry is a set of other 
+	user identifiers. More precisely, $\RR[U]$ is the set of all the users with whom $U$ has a 
+	transaction, and in that transaction $U$ is the payer.
 	\item List $\VV$, which keeps track of the amount of coins each user is supposed to 
-	receive during a multi-path payment. Similar to the previous lists, it is also indexed 
-	by a user identifier. The value $\VV[U]$ corresponds to the total amount of coins the 
-	user $U$ is supposed to receive after a successful execution of a multi-path payment.
+	receive during a multi-path payment. It is also indexed by a user identifier. More precisely, 
+	$\VV[U]$ corresponds to the total amount of coins the user $U$ is supposed to receive after 
+	a successful execution of a multi-path payment.
 	\item List $\UU$, which keeps track of all the users involved in the multi-path payment.
 	\item Queue $\QQ$, which keeps track of the remaining transactions in the multi-path payment.
 	\item Set $\JJ$, which keeps track of the users who aborted during the execution of 
@@ -165,15 +172,40 @@ the final version of the ideal functionality.}
 \centering
 \fbox{\parbox{\textwidth}{
 
-%\textbf{Open Channel:} On input $(\open, \sid, c_{\langle U,U' \rangle}, v, U', t, f)$ from a 
-%user $U$, $\FF$ checks whether $c_{\langle U,U' \rangle}$ is well-formed (i.e., contains valid 
+\textbf{Open Channel:} On input $(\mathsf{OpenChannel},\gamma,\tid_U)$ from a user $U$, 
+$\FF$ proceeds as follows
+\begin{itemize}[label=-]
+	\item Sends \NEWE{$(\mathsf{Create},\gamma,\tid_U)$ to $\sdv$}.
+	\item Receives $b$ from $\sdv$.
+	\item If $b = \bot$, then $\FF$ aborts.
+	\item Otherwise, $\FF$ sends $(\mathsf{created},\gamma.\cid)$ to $\gamma.\users$ and $\sdv$.
+\end{itemize}
+
+% checks whether $c_{\langle U,U' \rangle}$ is well-formed (i.e., contains valid 
 %identifiers and it is not a duplicate), and sends $(c_{\langle U,U' \rangle}, v, t, f)$ 
 %to $U'$ and $\sdv$, where $U'$ can either abort or authorize the operation. In the latter case, 
 %$\FF$ appends the tuple $(c_{\langle U,U' \rangle}, v, t, f)$ to $\BB$ via $\FF_{\BB}$ and 
 %$(c_{\langle U,U' \rangle}, v, t, h)$ to $\LL$, for some random $h$. Finally, $\FF$ sends $h$ 
 %to $U, U'$ and $\sdv$. \\
-%
-%\textbf{Close Channel:} On input $(\close, \sid, c_{\langle U,U' \rangle}, h)$ from a user $U$ 
+
+\textbf{Close Channel:} On input $(\mathsf{CloseChannel},\gamma)$ from a user $U$, $\FF$ proceeds 
+as follows
+\begin{itemize}
+	\item Sends \NEWE{$(\mathsf{Close},\gamma.\cid)$ to $\sdv$}.
+	\item Receives $b$ from $\sdv$.
+	\item If $b = \bot$, then $\FF$ aborts.
+	\item Otherwise, $\FF$ sends $(\mathsf{closed},\gamma.\cid)$ to $\gamma.\users$ and $\sdv$.
+\end{itemize}
+
+%\textbf{Get Channel:} On input $(\mathsf{GetChannel},\cid)$ from a user $U$, $\FF$ proceeds as 
+%follows
+%\begin{itemize}
+%	\item If there does not exist $\gamma \in \CC$, such that $\gamma.\cid = \cid$, then $\FF$
+%	sends $\gamma$ to $U$.
+%	\item Otherwise, $\FF$ sends $\bot$ to $U$.
+%\end{itemize}
+
+%On input $(\close, \sid, c_{\langle U,U' \rangle}, h)$ from a user $U$ 
 %or $U'$, the ideal functionality $\FF$ parses $\BB$ via $\FF_{\BB}$ for an entry 
 %$(c_{\langle U,U' \rangle}, v, t, f)$ and $\LL$ for an entry $(c_{\langle U,U' \rangle}, v', t', 
 %h)$ for $h \neq \bot$. If $c_{\langle U,U' \rangle} \in \CC$ or $t' > |\BB|$ or $t' > |\BB|$, 
@@ -213,7 +245,8 @@ Next, $\FF$ executes the following interactive protocol:
 		%$\bot$, and $\FF$ aborts.
 		%\item Otherwise, $\FF_{\GC}$ returns the channel $\gamma_i$, where $\gamma_i.\cid = 
 		%\cid_i$.
-		\item Sends \NEWE{$(\Lock,U_r,\vec{\ell},U_i,v_i)$ to $\sdv$}.
+		\item Samples $\lid_i$ from $\vec{\ell}$ and ends \NEWE{$(\Lock,U_r,\lid_i,U_i,v_i)$ to 
+		$\sdv$}.
 		\item Receives $b$ from $\sdv$.
 		\item If $b = \bot$, then $\FF$ aborts.
 		\item Otherwise, $\FF$ adds $\lid_i$ to $\LL[U^*]$ and $\LL[U_i]$, and sets $\VV[U_i] = 
@@ -223,13 +256,14 @@ Next, $\FF$ executes the following interactive protocol:
 		%\item Otherwise, $\FF$ adds $h_i$ to $\HH[U^*]$ and $\HH[U_i]$, sets $\VV[U_i] = \VV[U_i] + v_i$.
 		\item Adds $d_i = (\gamma_i,U^*,v_i,t_i)$ to $\DD[U_i]$.
 		\item If $U_i = U_r$, then $\FF$ continues with the next iteration of the loop.
-		\item Sends \NEWE{$(\mathsf{NextHops}, \vec{\id})$ to $\sdv$}.
+		\item Otherwise, sends \NEWE{$(\mathsf{NextHops}, \vec{\id})$ to $\sdv$}.
 		\item Receives $(U_i^1,\ldots,U_i^n)$ from $\sdv$.
 		\item Sends $(\mathsf{SplitRequest}, (U_i^1,\ldots,U_i^n), v_i)$ to $U_i$ 
 		and $\sdv$.
 		\item $U_i$ replies with $(\mathsf{Split}, \{(\cid_i^1,U_i^1,v_i^1,t_i^1),\ldots,
 		(\cid_i^{k_i},U_i^{k_i},v_i^{k_i},t_i^{k_i})\})$.
-		\item Then, for all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
+		\item If $\textstyle\sum_{j = 1}^{k_i} v_i^j > v_i$, then $\FF$ aborts.
+		\item Otherwise, for all $j \in \{1,\ldots,k_i\}$, $\FF$ enqueues 
 		$(\cid_i^j,U_i,U_i^j,v_i^j,t_i^j)$ to $\QQ$, and adds $U_i^j$ to $\RR[U_i]$.
 	\end{itemize}
 	
@@ -239,7 +273,7 @@ Next, $\FF$ executes the following interactive protocol:
 		\item Queries $U_i$ from $\UU$ with $\LL[U_i]$, and notifies $\sdv$.
 		\item $U_i$ replies with $b$, and if $b = \bot$, then $\FF$ add $U_i$ to $\JJ$ and sends
 		$(\LL[U_i],\bot)$ to $U_i$ and $\sdv$. 
-		\item If $\RR[U_i] \subseteq \JJ$ and $U_i \not\in \JJ$, then $\FF$ adds $U_i$ to $\JJ$, 
+		\item If $U_i \neq U_r$ and $U_i \not\in \JJ$ and $\RR[U_i] \subseteq \JJ$, then $\FF$ adds $U_i$ to $\JJ$, 
 		and sends $(\LL[U_i],\bot)$ to $U_i$ and $\sdv$.
 		\item Otherwise, for all $j \in \{1,\ldots,|\DD[U_i]|\}$, $\FF$ does the following
 		\begin{itemize}[label=$\circ$]
@@ -286,8 +320,7 @@ Next, $\FF$ executes the following interactive protocol:
 
 \TODOP{I didn't fully get all the details. Revisit}
 
-\caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$ in the $(\FF_{\GC}, \FF_{\mathsf{GDC}})$-
-hybrid model}
+\caption{Ideal functionality $\FF_{\mathsf{MPPCN}}$.}
 \label{fig:ideal-mppcn}
 \end{figure*}
 
@@ -300,18 +333,17 @@ $\FF_{\mathsf{MPPCN}}$ functionality.
 \paragraph{Balance Security}
 Balance security roughly means that an intermediary receives \emph{at least} as many coins as 
 it forwards, and that it can pull its coins as soon as \emph{at least} one of its right 
-neighbors has pulled. We assume that the first part of this property is enforced by the 
-environment by considering rational users, which when they splits, they do not split to a 
-total value that is more than they are supposed to receive. \MESSAGEE{We can make an explicit 
-check for this in the ideal functionality.} The second part is achieved in step 2 of 
-$\mathsf{Pay}$ interface, which guarantees that the only way a payment will fail 
-for a user is if all of its right neighbors have aborted. Hence, the user has no one right 
-neighbor that pulled.
+neighbors has pulled. The first part of this property is enforced towards the end of step 1 of 
+$\mathsf{Pay}$ interface, where the ideal functionality checks that a user does not split to a 
+total value that is more than the user is supposed to receive. The second part is achieved in 
+step 2 of $\mathsf{Pay}$ interface, which guarantees that the the payment will fail for 
+a user if all of its right neighbors have aborted. Hence, the user has no right neighbor 
+that already pulled.
 
 \paragraph{Value Privacy}
 Value privacy means that the value of a transaction between two non-compromised users cannot 
 be determined. Our ideal functionality achieves this property as it does not contact any user 
-who does not lie in the payment path, and for each transaction only the involved parties are 
+who does not lie on the payment path, and for each transaction only the involved parties are 
 contacted. 
 \MESSAGEP{Ideally, we should recall the definitions that we had for credit networks and adjust them for PCN. Source here: \url{https://www.ndss-symposium.org/wp-content/uploads/2017/09/04_3_2.pdf}}
 
@@ -322,9 +354,9 @@ Completeness means that the receiver cannot start pulling the coins before it ha
 enough transactions, whose sum amount equals the total coins he is supposed to receive by 
 the sender. Our ideal functionality keeps track of the amount of coins each user in the 
 multi-path payment will receive in the list $\VV$, and it performs a check at the beginning of 
-step 2 of the $\mathsf{pay}$ interface to make sure that the amount of coins the receiver will 
-receive equals the amount with which the sender invoked the $\mathsf{pay}$ interface. Hence, our 
-ideal functionality achieves this property as well.
+step 2 of the $\mathsf{Pay}$ interface to make sure that the amount of coins the receiver will 
+receive equals the amount with which the sender invoked the $\mathsf{Pay}$ interface. Hence, our 
+ideal functionality achieves this property.
 
 \paragraph{Relationship Anonymity}
 Relationship anonymity roughly means that any two simultaneous payments over the same path (or 
@@ -332,20 +364,20 @@ multi-path) for the same value (and splitting in case of multi-path payment) are
 indistinguishable to the eyes of the intermediaries as long as there exists \emph{at least} 
 one honest users in the path (or per path in case of multi-path payment). 
 \MESSAGEP{As before with value privacy, it would be good to refer to that definition of credit networks and also the one in PCN (CCS'17)}
-This is achieved by 
-our ideal functionality as every intermediate user only receives a unique identifier for 
-each payment, and such an identifier is independent from the identifiers of other users involved 
-in the same payment.
+\MESSAGEE{We are leaking the receiver to every user on the path, what kind of anonymity can we achieve?}
+%This is achieved by 
+%our ideal functionality as every intermediate user only receives a unique identifier for 
+%each payment, and such an identifier is independent from the identifiers of other users involved 
+%in the same payment.
 
 \subsection{Multi-Path Multi-Hop Locks (MPMHL)}
 \label{sec:mpmhl}
 
 In the following we define an ideal functionality $\FF_{\mathsf{MPMHL}}$ for {\sysname}s, which 
-models the cryptographic lock functionality. Similar to $\FF_{\mathsf{MPPCN}}$, our ideal 
-functionality $\FF_{\mathsf{MPMHL}}$ also works in interaction with a universe of users 
-$\mathbb{U}$.
-$\FF_{\mathsf{MPMHL}}$ makes use of $\FF_{\anon}, \FF_{\smt}$ and $\FF_{\syn}$, thus, it is 
-defined in $(\FF_{\anon}, \FF_{\smt}, \FF_{\syn})$-hybrid model. The data structures and 
+models the cryptographic lock functionality. 
+%Similar to $\FF_{\mathsf{MPPCN}}$, our ideal functionality $\FF_{\mathsf{MPMHL}}$ also works in interaction with a universe of users $\mathbb{U}$.
+$\FF_{\mathsf{MPMHL}}$ makes use of $\FF_{\mathsf{GDC}}$ and $\FF_{\smt}$, thus, it is 
+defined in $(\FF_{\mathsf{GDC}}, \FF_{\smt})$-hybrid model. The data structures and 
 operations that $\FF_{\mathsf{MPMHL}}$ defines are shown below. Our ideal functionality 
 $\FF_{\mathsf{MPMHL}}$ is found in \cref{fig:ideal-mpmhl}.
 
@@ -353,39 +385,42 @@ $\FF_{\mathsf{MPMHL}}$ is found in \cref{fig:ideal-mpmhl}.
 Our ideal functionality uses the following data structures internally:
 
 \begin{itemize}
-	\item List $\LL$, which is initialized as empty list and is used to track the locks. 
-	The entries of $\LL$ are of the form $(\lid_i, \td_i, U_i, U_j, f, \\ \lid_{i+1})$, 
-	where $\lid_i$ is unique lock identifier, $\td_i$ is the trapdoor of the lock, $U_i$ 
+	\item List $\mathcal{T}$, which keeps track of lock/trapdoor pairs. The entries of 
+	$\mathcal{T}$ are of the form $(\lid,\td)$, where $\lid$ is a lock identifier, and 
+	$\td$ is the trapdoor of the lock $\lid$.
+	\item List $\LL$, which keeps track of all the locks. The entries of $\LL$ are of the form 
+	$(\lid_i, U_i, U_j, f, \lid_{i+1})$, where $\lid_i$ is a unique lock identifier, $U_i$ 
 	and $U_j$ are the users connected by the lock (the left and right user, respectively), 
 	$f \in \{\Init,\Lock,\Rel\}$ is a status flag of the lock, and $\lid_{i+1}$ is the 
-	identifier of the next lock on the path. We note that the trapdoors are only associated 
-	to the initial locks created from the sender, and in all subsequent locks on the path the 
-	trapdoor is set to $\bot$. However, since our list $\LL$ has a linked structure (includes 
-	the next lock identifier), we can recursively traverse the list of locks on the path to 
-	obtain the trapdoor associated to the path.
+	identifier of the next lock on the path.
 \end{itemize}
 
 \paragraph{Operations}
 In \cref{fig:ideal-mpmhl} we define the ideal functionality $\FF_{\mathsf{MPMHL}}$ with its 5 
-interfaces. The $\Setup$ interface allows the user $U_0$ (the sender) to setup states and 
-trapdoors to be used later when establishing and releasing the locks. The $\Lock$ interface 
-allows a user to establish locks with its right neighbors using the previously established 
-locks. The $\Extract$ interface allows the user $U_n$ (the receiver) to release the locks that it 
-received using the initially created trapdoors. The $\Release$ interface allows an intermediate 
-user along the path to release the locks with its left neighbors assuming its right locks are 
-released. Lastly, $\mathsf{GetStatus}$ interface allows a user to check the current status of 
-a lock. We note that internally the locks are assigned identifiers that are unique across all 
-paths.
+interfaces. The $\Setup$ interface generates locks and and their corresponding trapdoors. 
+The $\Lock$ interface allows a user to establish locks with its right neighbor using the 
+previously established locks. The $\Extract$ interface allows the user $U_r$ (the receiver) to 
+release the locks that it received using the initially created trapdoors. The $\Release$ 
+interface allows an intermediate user along the path to release a lock with its left neighbor 
+assuming its corresponding right lock is already released. Lastly, $\mathsf{GetStatus}$ interface 
+allows a user to check the current status of a lock. We note that internally the locks are 
+assigned identifiers that are unique across all paths.
 
-For ease of exposition we also define several functions that extract or update information of 
-a lock given its identifier as input: $\getStatus(\cdot)$ returns the status of the lock, 
+For ease of exposition we also define several functions that extract or update information 
+from the internal data structures of the ideal functionality, along with auxiliary functions 
+to perform some common tasks. $\mathsf{generateLock}(\cdot)$ function takes as input some 
+auxiliary information, and returns a lock identifier. $\mathsf{generateTrapdoor}(\cdot)$ takes 
+as input a lock identifier, and returns creates a trapdoor for it. $\mathsf{getTrapdoor}(\cdot)$ 
+takes as input a lock identifier, and returns the trapdoor associated to this lock from the list 
+$\mathcal{T}$. $\validateTrapdoors(\cdot, \cdot)$ takes as input a vector of locks and a vector 
+of trapdoors, and returns $\top$ if the there is matching pair of lock/trapdoor in list 
+$\mathcal{T}$ for every lock and trapdoor given as input, and returns $\bot$ otherwise. The next functions that we define all take as input a lock identifier. $\getStatus(\cdot)$ returns the status of the lock, 
 $\getLeft(\cdot)$/$\getRight(\cdot)$ return the left/right user involved with the 
 lock, $\getNextLock(\cdot)$ returns the identifier of the next lock, $\setRightUser(\cdot, U)$ 
 sets the right user of the lock to a user $U$, $\setRightLock(\cdot, \lid^*)$ sets the right lock 
-of the given lock to $\lid^*$, $\updateStatus(\cdot, f)$ sets the status of the lock to a flag 
-$f$, $\generateTrapdoor(\cdot)$ creates a trapdoor associated to the lock, and 
-$\validateTrapdoors((\cdots), (\td_1,\ldots,\td_m))$ checks that the trapdoors are associated 
-to the given locks by recursively traversing the path of each given lock.
+of the given lock to $\lid^*$. $\updateStatus(\cdot, z, f)$ sets the status of the lock to a flag 
+$f$, using the auxiliary information $z$, and returns an output object that is defined by $z$ 
+and $f$.
 
 %\begin{figure*}[!h]
 %	\centering
@@ -489,8 +524,7 @@ to the given locks by recursively traversing the path of each given lock.
 			\procedure[mode=text]{$\Release(\lid,k,w)$}{
 				Upon invocation by $U_i$: 												\\
 				if $U_i = U_r$ or $\getRight(\lid) \neq U_i$ or 
-				$\getStatus(\lid) \neq \Lock$ or $\getStatus(\getNextLock(\lid)) 
-				\neq \Rel$ then send $\bot$ to $U_i$ and $\sdv$							\\
+				$\getStatus(\lid) \neq \Lock$ then send $\bot$ to $U_i$ and $\sdv$		\\
 				else:																	\\
 				\quad $k' \gets \updateStatus(\lid, (k,w), \Rel)$						\\
 				\quad if $k' = \bot$ then:												\\
@@ -511,7 +545,8 @@ to the given locks by recursively traversing the path of each given lock.
 				$\getNextLock(\lid_i) \neq \bot$ then set $\vec{\ell} = \vec{\ell} \setminus 
 				\{\lid_i\}$																\\
 				if $|\vec{\ell}| = 0$ \textcolor{blue}{ or $|\vec{\ell}| \neq |\vec{\td}|$ (in 
-				multi-trapdoor case)} then send $\bot$ to $U_r$							\\
+				multi-trapdoor case)} or $\validateTrapdoors(\vec{\ell},\vec{\td}) = \bot$ 
+				then send $\bot$ to $U_r$												\\
 				$\forall i \in [1,j]$: 													\\
 				\quad $k_i \gets \updateStatus(\lid_i, \vec{\td}, \Rel)$					\\
 				\quad if $k_i = \bot$ then:												\\
@@ -538,9 +573,9 @@ to the given locks by recursively traversing the path of each given lock.
 				\quad sample $\lid^* \sample \vec{\ell}$ and set $\vec{\ell} = \vec{\ell} \setminus \{\lid^*\}$													\\
 				\quad $\lid' \gets \mathsf{generateLock}((\lid^*,w))$ and set $\vec{\ell}_j = \vec{\ell}_j \cup \lid'$													\\
 				\quad $\td \gets \mathsf{getTrapdoor}(\lid^*)$								\\
-				\quad insert $(\lid', \td, U_i, U_j, \Init, \bot)$ into $\LL$				\\
-				\quad $\setRightLock(\lid^*, \lid')$											\\
 				\quad insert $(\lid',\td)$ into $\mathcal{T}$								\\
+				\quad insert $(\lid', U_i, U_j, \Init, \bot)$ into $\LL$						\\
+				\quad $\setRightLock(\lid^*, \lid')$											\\
 				send $(\vec{\ell}_j, \Lock)$ to $U_j$ and $\sdv$								\\
 				receive $b$ from $U_j$														\\
 				if $b = \bot$ then: 															\\
@@ -574,35 +609,14 @@ are captured by the functionality $\FF_{\mathsf{MPMHL}}$.
 
 \TODOP{Add ACID properties.}
 
-\paragraph{Consistency} A \sysname is consistent if no user can release its left lock without its 
-right lock being released first. Our ideal functionality captures this property as the $\Release$ 
-interface allows a user to release the left lock only if the corresponding right lock has already 
-been released. In case the user is the receiver, the $\Extract$ interface is used for releasing, 
-and it makes sure that there are no further right locks before starting the release of the 
-provided locks.
-
-\MESSAGEE{But in our actual protocol we have a wormhole attack, so consistency should not 
-quite hold. Need to get rid of this, and modify the ideal functionality accordingly.}
-
 \paragraph{Atomicity} Atomicity means that every user in any path is able to release its left 
-lock only if the corresponding right lock is already released. Our ideal functionality enforces 
-this by keeping track of all the locks in the list $\LL$, and in the $\Release$ interface only 
-changes the status of a lock to $\Rel$ if the corresponding next lock is already released (i.e., 
-has flag $\Rel$). If the user is the receiver, then the $\Extract$ interface validates that no 
-right lock exists.
+lock if the corresponding right lock is already released. 
+\MESSAGEE{How do we argue about this in our ideal functionality?}
 
 \paragraph{Completeness} A \sysname is complete if the receiver can only start releasing its 
 locks, once it has received same number of locks as the trapdoors (i.e., the receiver has 
-received all the locks intended for him). More precisely, our ideal functionality generates 
-$v$ trapdoors in the $\Setup$ interface, and in the $\Extract$ interface the release can only 
-begin if the receiver has $v$ locks as well.
+received all the locks intended for him). This is enforced in our ideal functionality because 
+it performs the check $|\vec{\ell}| = |\vec{\td}|$ in the $\Extract$ interface, which ensures 
+that the length of lock vector is equal to the length of trapdoor vector.
 
-\paragraph{Relationship Anonymity} Relationship anonymity requires that each intermediate user 
-cannot distinguish two simultaneous multi-hop locks with the same sender and receiver. This is 
-achieved by our ideal functionality as the lock identifiers are sampled at random, and during 
-the locking phase a user only learns the identifiers of its left and right locks. Since the 
-identifiers are independent the property follows.
-
-\MESSAGEE{In our protocols we only achieve relationship anonymity as long as one intermediary is 
-honest. And what about anonymity in the sense that a user cannot distinguish if it is part of a 
-single-path or multi-path lock?}
+\MESSAGEE{Do we want any other properties here?}

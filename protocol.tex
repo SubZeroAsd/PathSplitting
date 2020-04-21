@@ -1,41 +1,39 @@
 \section{Protocol}
 
-\TODOE{Building blocks}
-
-\subsection{Intuition}
-
-We provide two constructions, namely single-trapdoor and multi-trapdoor. The main difference 
-between the two is that in the single-trapdoor construction only a single trapdoor is used, and 
-no matter the number of locks the receiver gets, all of them can be released using the same 
-trapdoor. Hence, the receiver is not forced to wait to receive all the locks intended for him. 
-Whereas in the multi-trapdoor construction we generate as many lock/trapdoor pairs as the amount 
-of coins the sender wants to transfer to the receiver. This means that if the sender wants to 
-send $v$ coins, then he generates $v$ lock/trapdoor pairs, hence, every lock has a unique 
-trapdoor associated to it. Although, from a communication perspective multi-trapdoor 
-construction is more expensive compared to the single-trapdoor construction, it has a feature 
-that allows us to force the receiver to wait for all (or threshold of) the $v$ locks intended for 
-him, before starting the release of the locks. This feature is achieved as follows: the sender 
-generates $v$ lock/trapdoor pairs, and two encryption keys $k_s, k_t$, encrypts the trapdoors 
-using the key $k_t$ (therefore, creating a ciphertext $c_t$), secret shares the key $k_t$ into 
-$v$ shares ($[k_t]_1,\ldots,[k_t]_v$), encrypts all these shares individually using the key $k_s$ 
-(therefore, creating $v$ ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$), includes these ciphertexts 
-inside the $v$ locks that it previously created (one ciphertext per lock), and sends the 
-trapdoor $\td := (c_t, k_s)$ to the receiver. At this point the receiver has the key $k_s$, 
-which can be used to decrypt the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$, however, he 
-doesn't have the key $k_t$, which will allow him to decrypt the ciphertext $c_t$ that includes 
-the trapdoors he needs to release the locks. Since the share ciphertexts $(c_s^{(1)},
-\ldots,c_s^{(v)})$ are now part of the locks, they will eventually reach the receiver, and at 
-that point the receiver can use the key $k_s$ it received from the sender to decrypt these 
-ciphertexts, and obtain the shares $[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
-Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the 
-ciphertext $c_t$ to obtain the trapdoors of the locks, and start releasing the locks. Hence, the 
-receiver needs to wait for all the $v$ locks to reach him, so that he can decrypt all the 
-ciphertexts that are part of the locks and reconstruct the key $k_t$. Instead of forcing the 
-receiver to wait for all the $v$ locks, we can also force him to wait for a subset of size $t$  
-using a $t$-out-of-$v$ secret sharing. The locking and releasing mechanisms are identical in 
-both the single-trapdoor and multi-trapdoor constructions, and are based on pairings. 
-The differences between the two constructions are how the setup is performed by the sender, and 
-how the release of the locks from receiver (extraction phase) happens.
+%\subsection{Intuition}
+%
+%We provide two constructions, namely single-trapdoor and multi-trapdoor. The main difference 
+%between the two is that in the single-trapdoor construction only a single trapdoor is used, and 
+%no matter the number of locks the receiver gets, all of them can be released using the same 
+%trapdoor. Hence, the receiver is not forced to wait to receive all the locks intended for him. 
+%Whereas in the multi-trapdoor construction we generate as many lock/trapdoor pairs as the amount 
+%of coins the sender wants to transfer to the receiver. This means that if the sender wants to 
+%send $v$ coins, then he generates $v$ lock/trapdoor pairs, hence, every lock has a unique 
+%trapdoor associated to it. Although, from a communication perspective multi-trapdoor 
+%construction is more expensive compared to the single-trapdoor construction, it has a feature 
+%that allows us to force the receiver to wait for all (or threshold of) the $v$ locks intended for 
+%him, before starting the release of the locks. This feature is achieved as follows: the sender 
+%generates $v$ lock/trapdoor pairs, and two encryption keys $k_s, k_t$, encrypts the trapdoors 
+%using the key $k_t$ (therefore, creating a ciphertext $c_t$), secret shares the key $k_t$ into 
+%$v$ shares ($[k_t]_1,\ldots,[k_t]_v$), encrypts all these shares individually using the key $k_s$ 
+%(therefore, creating $v$ ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$), includes these ciphertexts 
+%inside the $v$ locks that it previously created (one ciphertext per lock), and sends the 
+%trapdoor $\td := (c_t, k_s)$ to the receiver. At this point the receiver has the key $k_s$, 
+%which can be used to decrypt the share ciphertexts $(c_s^{(1)},\ldots,c_s^{(v)})$, however, he 
+%doesn't have the key $k_t$, which will allow him to decrypt the ciphertext $c_t$ that includes 
+%the trapdoors he needs to release the locks. Since the share ciphertexts $(c_s^{(1)},
+%\ldots,c_s^{(v)})$ are now part of the locks, they will eventually reach the receiver, and at 
+%that point the receiver can use the key $k_s$ it received from the sender to decrypt these 
+%ciphertexts, and obtain the shares $[k_t]_1,\ldots,[k_t]_v$ of the key $k_t$. 
+%Once the receiver obtains these shares, he can reconstruct the key $k_t$, and decrypt the 
+%ciphertext $c_t$ to obtain the trapdoors of the locks, and start releasing the locks. Hence, the 
+%receiver needs to wait for all the $v$ locks to reach him, so that he can decrypt all the 
+%ciphertexts that are part of the locks and reconstruct the key $k_t$. Instead of forcing the 
+%receiver to wait for all the $v$ locks, we can also force him to wait for a subset of size $t$  
+%using a $t$-out-of-$v$ secret sharing. The locking and releasing mechanisms are identical in 
+%both the single-trapdoor and multi-trapdoor constructions, and are based on pairings. 
+%The differences between the two constructions are how the setup is performed by the sender, and 
+%how the release of the locks from receiver (extraction phase) happens.
 
 \subsection{Cryptographic Building Blocks}
 
@@ -46,31 +44,12 @@ bilinear map $e \colon \GG_1 \times \GG_2 \to \GG_T$, and generators $g_i \in \G
 \{1,2,T\}$. We consider Type-III bilinear groups as they represent the state-of-the-art regarding 
 the efficiency and security.
 
-\paragraph{Universal Re-encryption Scheme} Universal re-encryption allows to re-encrypt without 
-knowledge of the public key under which a ciphertext was computed. Therefore, one can use it to 
-re-randomize an input ciphertext, such that the encrypted value remains the same, but the output 
-ciphertext looks different than the input ciphertext. Universal re-encryption scheme is composed 
-of the algorithms $(\kgen, \enc, \dec, \renc)$, where $(\sk, \pk) \gets \kgen(1^\lambda)$, 
-$c \gets \enc(\pk, m)$, $m \gets \dec(\sk, c)$, and $c' \gets \renc(c)$, for a secret/public key 
-pair $(\sk, \pk)$, a message $m$, a ciphertext $c$, and a randomized ciphertext $c'$. 
-Golle et al. \cite{gjjs} showed how to build such a primitive using the ElGamal encryption 
-scheme. This is achieved by appending to a standard ElGamal ciphertext a second ciphertext on 
-the identity element. Since ElGamal is homomorphic, one can use the second ciphertext to alter 
-the encryption factor in the first ciphertext. Hence, one does not need knowledge of the public 
-key in the re-encryption operation. The scheme of Golle et al. is defined as follows. $\kgen$ on 
-input the security parameter $1^\lambda$, samples a random $x \sample \ZZ_q$, computes $y \gets 
-g^x$, and outputs $\sk := x, \pk := y$. $\enc$ on input a message $m$ and a public key $y$, 
-samples a random encryption factor $r := (k_0, k_1) \sample \ZZ_q^2$, and outputs 
-$c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)] := [(my^{k_0},g^{k_0});(y^{k_1},g^{k_1})]$. $\dec$ 
-on input a secret key $x$ and a ciphertext $c := [(\alpha_0,\beta_0);(\alpha_1,\beta_1)]$, 
-computes $m_0 \gets \alpha_0 / \beta_0^x$ and $m_1 \gets \alpha_1 / \beta_1^x$. If $m_1 = 1$, 
-then it outputs $m := m_0$. Otherwise, the decryption fails, and it outputs $\bot$. $\renc$ on 
-input a ciphertext $c := [(\alpha_0,\beta_0); (\alpha_1,\beta_1)]$, samples a random 
-re-encryption factor $r' := (k_0',k_1') \sample \ZZ_q^2$, and outputs a randomized ciphertext 
-$c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
-\beta_0\beta_1^{k_0'});(\alpha_1^{k_1'},\beta_1^{k_1'})]$.
+\paragraph{CCA-secure Encryption Scheme} 
+\MESSAGEE{Fill this!}
 
 \subsection{PCN Construction}
+
+\subsubsection{Intuition}
 
 \begin{figure*}[tb]
 \centering
@@ -86,7 +65,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \pcelse \< \\ [-0.15\baselineskip][] 
 	\< \pcind \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Lock,U_r,\vec{\ell},U_i^j,v_i^j) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \text{Receive } (\mathsf{lock},U_i^j,\vec{w}_i^j) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
-	\< \pcind \pcind \REMOVEE{U_i^j \text{ receives } (\mathsf{lock},U_i,(U_r,\vec{\ell}_i^j,v_i^j)) \text{ from } \FF_{\mathsf{MPHML}}} \< \\ [-0.15\baselineskip][]
+	%\< \pcind \pcind \REMOVEE{U_i^j \text{ receives } (\mathsf{lock},U_i,(U_r,\vec{\ell}_i^j,v_i^j)) \text{ from } \FF_{\mathsf{MPHML}}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcif \vec{w}_i^j = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcind \pcreturn \bot \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \text{Create } \vec{\theta} = (\theta_{U_i} := (\gamma_j.\cash - v_i^j, \theta_{U_i}.\varphi), \theta_{U_i^j} := (\gamma_j.\cash + v_i^j, \theta_{U_i^j}.\varphi) \TODOP{How to write the conditions?} \< \\ [-0.15\baselineskip][]
@@ -99,7 +78,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcreturn \vec{w} \<
 }}
 
-\caption{The $\mathsf{lock}$ auxiliary function.}
+\caption{The $\Lock$ subroutine.}
 \label{fig:mppcn-sender}
 \end{figure*}
 
@@ -113,14 +92,14 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Setup,U_r,v) \< \\ [-0.15\baselineskip][]
 	\< U_s \text{ receives } (\mathsf{setup},U_r,(\vec{\ell}, \vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
-	\< \REMOVEE{U_r \text{ receives } (\mathsf{setup},U_s,(v,\vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
+	%\< \REMOVEE{U_r \text{ receives } (\mathsf{setup},U_s,(v,\vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
 	\< \text{Compute } \vec{w}_s \gets \Lock_{U_s}((U_r,\vec{\ell},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s},U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcif \vec{w}_s = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \text{Store } \vec{w}_s
 }}
 
-\caption{The $\mathsf{pay}$ routine in MPPCN for the sender.}
+\caption{The $\mathsf{Pay}$ routine in MPPCN for the sender.}
 \label{fig:mppcn-sender}
 \end{figure*}
 
@@ -137,7 +116,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \text{Parse } m^* \text{ as } \vec{\ell}_j \textcolor{blue}{\text{ and set } \vec{\ell} = \vec{\ell} \cup \vec{\ell}_j} \< \\ [-0.15\baselineskip][]
 	\< \textcolor{blue}{\pcind \pcif |\vec{\ell}| \neq v \pcthen \pcabort} \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Extract,\vec{\ell}_j,\vec{\td}) \textcolor{blue}{~(\text{or on } (\Extract,\vec{\ell},\vec{\td}))} \< \\ [-0.15\baselineskip][]
-	\< \pcind \REMOVEE{U^* \text{ receives } (\lid_i,k_i) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
+	%\< \pcind \REMOVEE{U^* \text{ receives } (\lid_i,k_i) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
 	\< \pcind U_r \text{ receives } b \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][] 
 	\< \pcind \pcif b = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
@@ -146,7 +125,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \pcabort \< 
 }}
 
-\caption{The $\mathsf{pay}$ routine in MPPCN for the receiver.}
+\caption{The $\mathsf{Pay}$ routine in MPPCN for the receiver.}
 \label{fig:mppcn-receiver}
 \end{figure*}
 
@@ -162,13 +141,13 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \text{Query } \FF_{\mathsf{route}} \text{ on } (\mathsf{InitRoute},U_r) \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Receive } \vec{\id} := (\id_1(U_r),\ldots,\id_k(U_r)) \text{ from } \FF_{\mathsf{route}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Query } \FF_{\mathsf{route}} \text{ on } (\mathsf{NextHops},\vec{\id}) \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Receives } (U_i^1,\ldots,U_i^n) \text{ from } \FF_{\mathsf{routes}} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Receive } (U_i^1,\ldots,U_i^n) \text{ from } \FF_{\mathsf{routes}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Compute } \{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\} \gets \mathsf{GetSplit((U_i^1,\ldots,U_i^n),v_i)} \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Compute } \vec{w}_i \gets \Lock_{U_i}((U_r,\vec{\ell}_i,\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif \vec{w}_i = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Set } \vec{w} = \vec{w} \cup \vec{w}_i \text{ and } \vec{\ell} = \vec{\ell} \cup \vec{\ell}_i \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Set } \mathcal{L} = \mathcal{L} \cup \{U^*\} \text{ and } \mathcal{R} = \mathcal{R} \cup \{U_i^1,\ldots,U_i^{k_i}\}  \< \\ [-0.15\baselineskip][]
+	%\< \pcind \text{Set } \mathcal{L} = \mathcal{L} \cup \{U^*\} \text{ and } \mathcal{R} = \mathcal{R} \cup \{U_i^1,\ldots,U_i^{k_i}\}  \< \\ [-0.15\baselineskip][]
 	\< \pcelse \pcif \textit{operation} = \mathsf{release} \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif m^* = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
@@ -183,7 +162,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\< \pcind \pcabort
 }}
 
-\caption{The $\mathsf{pay}$ routine in MPPCN for the intermediary.}
+\caption{The $\mathsf{Pay}$ routine in MPPCN for the intermediary.}
 \label{fig:mppcn-intermediary}
 \end{figure*}
 
@@ -253,6 +232,7 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 	\begin{center}
 	\framebox[0.78\textwidth]{
 		\begin{minipage}[t]{0.75\textwidth}
+			\MESSAGEE{In multi-trapdoor constructions we are not sending to the receiver the trapdoors directly, instead we send them along the path with locks. Hence, the receiver gets an empty trapdoor vector from the setup function.}\\
 			\underline{{$\langle\Setup_{U_s}(1^\lambda,U_r,v),\Setup_{U_r}(1^\lambda)\rangle$}}: 
 			On input the security parameter $1^\lambda$, a receiver user identifier $U_r$, and 
 			payment value $v$, the protocol does the following:
@@ -283,7 +263,8 @@ $c' := [(\alpha_0',\beta_0');(\alpha_1',\beta_1')] := [(\alpha_0\alpha_1^{k_0'},
 				\item $\pcind$Sample unused $\ell_i \sample \vec{\ell}$ and parse it as 
 				$(\ell_i^{(1)},\ell_i^{(2)},\ell_i^{(3)})$
 				\item $\pcind$Compute the lock $\ell_i' \gets((\ell_i^{(1)})^{w_i},
-				(\ell_i^{(2)})^{w_i},\renc(\ell_i^{(3)}))$ and add $\ell_i'$ into $\vec{\ell}_j$
+				(\ell_i^{(2)})^{w_i},\ell_i^{(3)})$
+				\item $\pcind$Add $\ell_i'$ to $\vec{\ell}_j$
 				\item $\pcreturn (U_r,\vec{\ell}_j,v_j)$ to $U_j$ and $\vec{w}$ to $U_i$
 			\end{itemize}
 			\underline{$\Extract(\vec{\ell}, \vec{\td})$}: On input a vector of locks 
