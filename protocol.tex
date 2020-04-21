@@ -44,8 +44,10 @@ bilinear map $e \colon \GG_1 \times \GG_2 \to \GG_T$, and generators $g_i \in \G
 \{1,2,T\}$. We consider Type-III bilinear groups as they represent the state-of-the-art regarding 
 the efficiency and security.
 
-\paragraph{CCA-secure Encryption Scheme} 
-\MESSAGEE{Fill this!}
+\paragraph{Encryption Scheme} An encryption scheme is composed of the algorithms 
+$(\kgen,\enc,\dec)$, where $(\sk,\pk) \gets \kgen(1^\lambda)$, $c \gets \enc(\pk,m)$ and 
+$m \gets \dec(\sk,c)$, for security parameter $1^\lambda$, secret/public key pair $(\sk,\pk)$, 
+a message $m$ and a ciphertext $c$.
 
 \subsection{PCN Construction}
 
@@ -56,7 +58,7 @@ the efficiency and security.
 \fbox{\procedure{}{
 	\< \Lock_{U_i}(m): \< \\[][\hline]
 	\< \text{Parse } m \text{ as } (U_r,\vec{\ell},\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\}) \< \\ [-0.15\baselineskip][]
-	\< \text{Initialize } \vec{w} = \emptyset \< \\ [-0.15\baselineskip][]
+	\< \text{Initialize an empty vector } \vec{w} \< \\ [-0.15\baselineskip][]
 	\< \pcfor j \pcin \{1..k_i\} \pcdo \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Query } \FF_{\GC} \text{ on } (\mathsf{GetChannel},\cid_i^j) \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Receive } \gamma_j \text{ from } \FF_{\GC} \< \\ [-0.15\baselineskip][]
@@ -91,7 +93,7 @@ the efficiency and security.
 	\< \pcif \textstyle\sum_{i = 1}^{k_s} v_s^i < v \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Setup,U_r,v) \< \\ [-0.15\baselineskip][]
-	\< U_s \text{ receives } (\mathsf{setup},U_r,(\vec{\ell}, \vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
+	\< \text{Receive } (\mathsf{setup},U_r,(\vec{\ell}, \vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][]
 	%\< \REMOVEE{U_r \text{ receives } (\mathsf{setup},U_s,(v,\vec{\td})) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
 	\< \text{Compute } \vec{w}_s \gets \Lock_{U_s}((U_r,\vec{\ell},\{(\cid_s^1, U_s^1,v_s^1,t_s^1),\ldots,(\cid_s^{k_s},U_s^{k_s},v_s^{k_s},t_s^{k_s})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcif \vec{w}_s = \bot \pcthen \< \\ [-0.15\baselineskip][]
@@ -107,17 +109,19 @@ the efficiency and security.
 \centering
 \fbox{\procedure{}{
 	\< \mathsf{Pay}_{U_r}(m): \< \\[][\hline]
+	\< \MESSAGEE{The lines in blue specify what changes if we consider multi-trapdoor (unit amount) constructions.} \< \\ [-0.15\baselineskip][]
+	\< \MESSAGEE{Simply, the receiver keeps collecting the locks until it has enough of them (i.e., $v$ locks).} \< \\ [-0.15\baselineskip][]
 	\< \text{Parse } m \text{ as } (\textit{operation}, U^*, m^*) \< \\ [-0.15\baselineskip][]
 	\< \pcif \textit{operation} = \mathsf{setup} \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Parse } m^* \text{ as } (v,\vec{\td}) \text{ and store } (v,\vec{\td}) \< \\ [-0.15\baselineskip][]
-	\< \pcelse \pcif \textit{operation} = \mathsf{lock} \textbf{ and } \text{has stored a pair } (v, \vec{\td}) \pcthen \< \\ [-0.15\baselineskip][]
-	\< \pcind \pcif m^* = \bot \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcelse \pcif \textit{operation} = \mathsf{lock} \pcthen \< \\ [-0.15\baselineskip][]
+	\< \pcind \pcif m^* = \bot \textbf{ or } \text{has not stored a pair } (v, \vec{\td}) \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Parse } m^* \text{ as } \vec{\ell}_j \textcolor{blue}{\text{ and set } \vec{\ell} = \vec{\ell} \cup \vec{\ell}_j} \< \\ [-0.15\baselineskip][]
-	\< \textcolor{blue}{\pcind \pcif |\vec{\ell}| \neq v \pcthen \pcabort} \< \\ [-0.15\baselineskip][]
+	\< \textcolor{blue}{\pcind \pcif |\vec{\ell}| \neq v \pcthen \pccontinue} \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Query } \FF_{\mathsf{MPMHL}} \text{ on } (\Extract,\vec{\ell}_j,\vec{\td}) \textcolor{blue}{~(\text{or on } (\Extract,\vec{\ell},\vec{\td}))} \< \\ [-0.15\baselineskip][]
 	%\< \pcind \REMOVEE{U^* \text{ receives } (\lid_i,k_i) \text{ from } \FF_{\mathsf{MPMHL}}} \< \\ [-0.15\baselineskip][]
-	\< \pcind U_r \text{ receives } b \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][] 
+	\< \pcind \text{Receive } b \text{ from } \FF_{\mathsf{MPMHL}} \< \\ [-0.15\baselineskip][] 
 	\< \pcind \pcif b = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
 	\< \pcelse \< \\ [-0.15\baselineskip][]
@@ -133,6 +137,7 @@ the efficiency and security.
 \centering
 \fbox{\procedure{}{
 	\< \mathsf{Pay}_{U_i}(m): \< \\[][\hline]
+	\< \text{Function definition } f \text{ for } \mathsf{GetSplit} \< \\ [-0.15\baselineskip][]
 	\< \text{Parse } m \text{ as } (\textit{operation}, U^*, m^*) \< \\ [-0.15\baselineskip][]
 	\< \pcif \textit{operation} = \mathsf{lock} \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif m^* = \bot \pcthen \< \\ [-0.15\baselineskip][]
@@ -142,7 +147,7 @@ the efficiency and security.
 	\< \pcind \text{Receive } \vec{\id} := (\id_1(U_r),\ldots,\id_k(U_r)) \text{ from } \FF_{\mathsf{route}} \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Query } \FF_{\mathsf{route}} \text{ on } (\mathsf{NextHops},\vec{\id}) \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Receive } (U_i^1,\ldots,U_i^n) \text{ from } \FF_{\mathsf{routes}} \< \\ [-0.15\baselineskip][]
-	\< \pcind \text{Compute } \{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\} \gets \mathsf{GetSplit((U_i^1,\ldots,U_i^n),v_i)} \< \\ [-0.15\baselineskip][]
+	\< \pcind \text{Compute } \{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\} \gets \mathsf{GetSplit}(f, (U_i^1,\ldots,U_i^n),v_i) \< \\ [-0.15\baselineskip][]
 	\< \pcind \text{Compute } \vec{w}_i \gets \Lock_{U_i}((U_r,\vec{\ell}_i,\{(\cid_i^1, U_i^1,v_i^1,t_i^1),\ldots,(\cid_i^{k_i}, U_i^{k_i},v_i^{k_i},t_i^{k_i})\})) \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcif \vec{w}_i = \bot \pcthen \< \\ [-0.15\baselineskip][]
 	\< \pcind \pcind \pcabort \< \\ [-0.15\baselineskip][]
@@ -365,5 +370,5 @@ the efficiency and security.
 	\label{fig:single-trapdoor}
 \end{figure*}
 
-\MESSAGEE{If we do not use an encryption, it can be the case that an intermediary receives 
+\MESSAGEE{If we do not use an encryption, it can be the case that an intermediary may receive 
 all the locks, and hence can reconstruct the trapdoor using the shares sent along the locks.}
