@@ -1,6 +1,35 @@
 \section{Routing}
 \label{sec:routing}
 
+\newcommand{\protfun}[1]{\ensuremath{\textit{#1}}}
+\newcommand{\IFfun}[1]{\ensuremath{\underline{\textit{#1}}}}
+
+\newcommand{\setroute}[0]{\protfun{set-}\protfun{route}}
+\newcommand{\setrouteIF}[0]{\IFfun{set-}\IFfun{route}}
+\newcommand{\addchannel}[0]{\protfun{add-}\protfun{ch}}
+\newcommand{\addlandmark}[0]{\protfun{add-}\protfun{lm}}
+\newcommand{\addchannelIF}[0]{\IFfun{added-}\IFfun{ch}}
+\newcommand{\addchannelprot}[0]{\protfun{added-}\protfun{ch}}
+\newcommand{\addlandmarkIF}[0]{\IFfun{added-}\IFfun{lm}}
+\newcommand{\addlandmarkprot}[0]{\protfun{added-}\protfun{lm}}
+\newcommand{\doneroutelmIF}[0]{\IFfun{done-}\IFfun{route-}\IFfun{lm}}
+\newcommand{\doneroutenodeIF}[0]{\IFfun{done-}\IFfun{route-}\IFfun{node}}
+\newcommand{\doneinitIF}[0]{\IFfun{done-}\IFfun{init}}
+\newcommand{\donenexthopIF}[0]{\IFfun{done-}\IFfun{nexthop}}
+\newcommand{\donesetupIF}[0]{\IFfun{done-}\IFfun{setup}}
+\newcommand{\donesetup}[0]{\protfun{done-}\protfun{setup}}
+\newcommand{\querynexthop}[0]{\protfun{query-}\protfun{nexthop}}
+\newcommand{\computeroute}[0]{\protfun{compute-}\protfun{route}}
+\newcommand{\queryroute}[0]{\protfun{query-}\protfun{route}}
+\newcommand{\querycoord}[0]{\protfun{query-}\protfun{coord}}
+\newcommand{\computecoord}[0]{\protfun{compute-}\protfun{coord}}
+
+\newcommand{\concatenate}[2]{\textit{concat}(#1, #2)}
+
+
+
+
+
 \begin{figure*}[htb]
 	\begin{center}	
 		\textbf{Variables and functions:}
@@ -20,54 +49,77 @@
 %		Upon invocation by $\sdv$: \\
 %		\quad If $\initflag = \bot$ then add $\node$ to $\Corrupted$
 %		}
-		\procedure[mode=text]{InitDone$(\distfun)$}{
+		\procedure[mode=text]{Setup$(\distfun, \randcordfun )$}{
 		Upon invocation by $\sdv$:\\
-		\quad Store $\distfun$\\
-		\quad Set $\initflag := \top$
+		\quad Store $\distfun$, $\randcordfun$ 
+		\quad $\send(\donesetup)$ to $\sdv$
 		}	
-		\procedure[mode=text]{AddChannel$(\node_j)$}{
-		Upon invocation by $\node_i$:\\
+		\procedure[mode=text]{AddChannel$(\node_i, \node_j)$}{
+		Upon invocation by $\sdv$:\\
 		\quad Add $\node_i$ and $\node_j$ to $\nodes$\\
 		\quad Add $(\node_i, \node_j)$ to $\edges$\\
-		\quad $\send(\node_i, \node_j)$ to $\node_j$
+		\quad $\send(\addchannelprot, \node_i, \node_j)$ to $\sdv$
 		%\quad If $\node_j \in \Corrupted$ then $\send((\node_i, \node_j))$ to $\sdv$ 
 		}
 		\procedure[mode=text]{AddLandmark$()$}{
 		Upon invocation by $\node_i$:\\
 		\quad Add $\node_i$ to $\LM$\\
-		\quad $\send(\node_i)$ to $\sdv$
+		\quad $\send(\addlandmarkprot, \node_i)$ to $\sdv$\\	
+		\quad $\send(\addlandmarkIF)$ to $\node_i$
 		}			
 		\end{minipage}
 		\begin{minipage}[t]{0.33\textwidth}
 		\procedure[mode=text]{SetRoutes$()$}{
-		Upon invocation by $\nodelandmark \in \LM$:\\
-		\quad Enqueue $\nodelandmark$ in $\QQ$\\
+		\quad Upon invocation by $\nodelandmark \in \LM$:\\
+		\quad For every neighbor $\node$ of $\nodelandmark$ do:\\
+		\quad Set $\nodeid{l}{l} := ()$\\
+		\quad \quad $\send(\setrouteIF, \nodeid{\nodelandmark}{\nodelandmark}, \nodelandmark)$ to $\sdv$\\
+		\quad \quad Enqueue $(\node, \nodeid{\nodelandmark}{\nodelandmark})$ in $\QQ$\\
+		\quad $\send(\doneroutelmIF)$ to $\env$\\
 		\quad While $\QQ$ is not empty do:\\
-		\quad \quad Dequeue $\node$ from $\QQ$\\
-		\quad \quad For every $\node'$ neighbor of $\node$ do:\\
-		\quad \quad \quad $\send(\nodelandmark, \node')$ to $\node$\\
-		\quad \quad \quad $\receive(b)$ from $\node$\\
-		\quad \quad \quad If $b = \top$ then\\
-		\quad \quad \quad \quad If $\nodeid{\node'}{\nodelandmark}$ is not set yet then:\\
-		\quad \quad \quad \quad \quad Compute random number $r$\\
-		\quad 
-		\quad \quad \quad \quad Set $\nodeid{\node'}{\nodelandmark} := \textit{concatenate}(\nodeid{\node}{\nodelandmark}, r)$\\
-		\quad \quad \quad \quad \quad If $\node' \in \Corrupted$ then $\send(\nodeid{\node'}{\nodelandmark})$ to $\sdv$\\
-		\quad \quad \quad \quad Enqueue $\node'$ in $\QQ$
+		\quad \quad Dequeue $(\node, \nodeid{\node^*}{\nodelandmark})$ from $\QQ$\\
+		\quad \quad If $\nodeid{\node}{\nodelandmark} \neq ()$ then:\\
+		\quad \quad \quad $\send(\queryroute, \node)$ to $\sdv$\\
+		%\quad \quad \quad $\receive(\queryroute, \node, \textit{value})$ from $\sdv$\\
+		%\quad \quad \quad Set $\nodeid{\node}{\nodelandmark} := \textit{value}$\\
+		\quad \quad \quad Compute $r \gets \set{0,1}^*$ \\
+		\quad \quad \quad Set $\nodeid{\node}{\nodelandmark} := \concatenate{\nodeid{\node^*}{\nodelandmark}}{r} $\\
+		\quad \quad \quad For every $\node'$ neighbor of $\node$ do:\\
+		\quad \quad \quad \quad Enqueue $(\node', \nodeid{\node}{\nodelandmark})$\\
+		\quad \quad $\send(\doneroutenodeIF)$ to $\env$	
+%		\quad \quad For every $\node'$ neighbor of $\node$ do:\\
+%		\quad \quad \quad $\send(\nodelandmark, \node')$ to $\node$\\
+%		\quad \quad \quad $\receive(b)$ from $\node$\\
+%		\quad \quad \quad If $b = \top$ then\\
+%		\quad \quad \quad \quad If $\nodeid{\node'}{\nodelandmark}$ is not set yet then:\\
+%		\quad \quad \quad \quad \quad Compute random number $r$\\
+%		\quad 
+%		\quad \quad \quad \quad Set $\nodeid{\node'}{\nodelandmark} := \textit{concatenate}(\nodeid{\node}{\nodelandmark}, r)$\\
+%		\quad \quad \quad \quad \quad If $\node' \in \Corrupted$ then $\send(\nodeid{\node'}{\nodelandmark})$ to $\sdv$\\
+%		\quad \quad \quad \quad Enqueue $\node'$ in $\QQ$
 		}
 		\end{minipage}%
 		\begin{minipage}[t]{0.4\textwidth}
 		\procedure[mode=text]{InitRoute($\node_r$)}{
 		Upon invocation by $\node$:\\
-		$\send(\node)$ to $\node_r$\\
-		$\receive(b, (\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k}) )$ from $\node_r$\\
-		If $\b = \bot$, $\send(\bot)$ to $\node$\\
-		Else $\send(\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k})$ to $\node$
+		\quad $\send(\querycoord, \node_r)$ to $\sdv$\\
+		\quad Compute $(\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}) \gets \randcordfun((\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k}))$\\
+%		\quad $\receive((\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}))$ from $\sdv$\\
+		\quad $\send(\doneinitIF, ((\nodeidrand{\node_r}{\nodelandmark_1}, \nodelandmark_1), \ldots, (\nodeidrand{\node_r}{\nodelandmark_k}, \nodelandmark_k))$ to $\node$
+%		$\send(\node)$ to $\node_r$\\
+%		$\receive(b, (\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k}) )$ from $\node_r$\\
+%		If $\b = \bot$, $\send(\bot)$ to $\node$\\
+%		Else $\send(\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k})$ to $\node$
 		}
-		\procedure[mode=text]{NextHop($\nodeid{\node_r}{\nodelandmark}, \nodelandmark$)}{
+		\procedure[mode=text]{NextHop($m := (\nodeidrand{\node_r}{\nodelandmark_1}, \nodelandmark_1), \ldots, (\nodeidrand{\node_r}{\nodelandmark_k}, \nodelandmark_k)$)}{
 		Upon invocation by $\node$:\\
-		Compute $\node^*$ s.t. $\node^* \in \textit{ngb}(\node))$ and $\textit{min}(\distfun(\nodeid{\node^*}{\nodelandmark}, \nodeid{\node_r}{\nodelandmark}))$\\
-		$\send(\node^*)$ to $\node$
+		\quad $\send(\querynexthop, v, m)$ to $\sdv$\\
+		\quad Set $\textit{next-hops} := ()$\\
+		\quad For each $(\nodeidrand{\node_r}{\nodelandmark_i}, \nodelandmark_i)$ in $m$ do: \\
+		\quad \quad Compute $\node'$ s.t. $\node' \in \textit{ngb}(\node))$ and $\textit{min}(\distfun(\nodeid{\node'}{\nodelandmark_i}, \nodeidrand{\node_r}{\nodelandmark_i}))$\\
+		\quad \quad Add $\node'$ to \textit{next-hops}\\
+		\quad $\send(\donenexthopIF, \textit{next-hops})$ to $\node$
+%		$\send(\node^*)$ to $\node$
 		}
 		\end{minipage}
 %		\begin{minipage}[t]{0.4\textwidth}
@@ -91,6 +143,59 @@
 	}
 	\end{center}
 	\TODOP{Missing cross-chain routing}
+	
+	\TODOP{See how we manage the topology in the end}
 	\caption{Ideal functionality for routing}
 	\label{fig:ideal-routing}
 \end{figure*}
+
+
+
+
+\begin{figure*}
+\framebox[\textwidth]{
+\begin{minipage}[t]{0.35\textwidth}
+\procedure[mode=text]{SetRoutes$_\nodelandmark$()}{
+Upon invocation by $\env$ \\
+\quad Store $\nodeid{\nodelandmark}{\nodelandmark} := ()$\\
+\quad For every neighbor $\node$ of $\nodelandmark$ do:\\
+\quad $\send(\setroute, \nodeid{l}{l}, \nodelandmark)$ to $\node$\\
+$\send(\doneroutelmIF)$ to $\env$
+}
+\procedure[mode=text]{SetRoutes$_\node$($m$)}{
+Upon invocation by $\nodelandmark$ \\
+\quad Parse $m$ as $(\setroute, \nodeid{\nodelandmark}{\nodelandmark}, \nodelandmark) $\\
+\quad Compute $r \gets \set{0,1}^*$\\
+\quad Set $\nodeid{\node}{\nodelandmark} := \concatenate{ \nodeid{\nodelandmark}{\nodelandmark}}{r} $\\
+\quad For every neighbor $\node'$ of $\node$ do:\\
+\quad \quad $\send(\computeroute, \nodeid{\node}{\nodelandmark}, \nodelandmark)$ to $\node$ \\
+\quad $\send(\doneroutenodeIF)$ to $\env$\\
+Upon invocation by $\node'$\\
+\quad Parse $m$ as $(\computeroute, \nodeid{\node}{\nodelandmark}, \nodelandmark)$\\
+\quad If $\nodeid{\node}{\nodelandmark} \neq ()$ then: \\
+\quad \quad \pcabort \\
+\quad else:\\
+\quad \quad Compute $r \gets \set{0,1}^*$\\
+\quad \quad Compute $\nodeid{\node}{\nodelandmark} := \concatenate{\nodeid{\node'}{\nodelandmark}}{r}$\\
+\quad \quad For every neighbor $\node^*$ of $\node$ do:\\
+\quad \quad \quad $\send(\computeroute, \nodeid{\node}{\nodelandmark}$\\
+\quad \quad $\send(\doneroutenodeIF)$ to $\env$ 
+}
+\end{minipage}
+\begin{minipage}[t]{0.35\textwidth}
+\procedure[mode=text]{AddLandmark$_\node$()}{
+Upon invocation by $\env$\\
+\quad Store \textit{$l_\textit{flag}$}$ := \top$\\
+\quad $\send(\addlandmarkIF)$ to $\env$
+}%
+\procedure[mode=text]{InitRoute$_\node$($\node_r$)}{
+Upon invocation by $\env$:\\
+$\send(\computecoord, (\nodelandmark_1, \ldots, \nodelandmark_k))$ to $\node_r$\\
+$\receive(\computecoord, (\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}))$ from $\node_r$\\
+$\send((\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}))$ to $\env$
+}
+\end{minipage}
+}
+\caption{Routing protocol. \label{fig:protocol-routing}}	
+\end{figure*}
+
