@@ -26,10 +26,9 @@
 
 \newcommand{\concatenate}[2]{\textit{concat}(#1, #2)}
 
-
-
-
-
+\newcommand{\randkey}[0]{\ensuremath{\mathsf{r}}}
+\newcommand{\hashfun}[0]{H}
+\newcommand{\cpl}[0]{\textit{cpl}}
 \begin{figure*}[htb]
 	\begin{center}	
 		\textbf{Variables and functions:}
@@ -154,7 +153,7 @@
 
 \begin{figure*}
 \framebox[\textwidth]{
-\begin{minipage}[t]{0.35\textwidth}
+\begin{minipage}[t]{0.3\textwidth}
 \procedure[mode=text]{SetRoutes$_\nodelandmark$()}{
 Upon invocation by $\env$ \\
 \quad Store $\nodeid{\nodelandmark}{\nodelandmark} := ()$\\
@@ -182,7 +181,7 @@ Upon invocation by $\node'$\\
 \quad \quad $\send(\doneroutenodeIF)$ to $\env$ 
 }
 \end{minipage}
-\begin{minipage}[t]{0.35\textwidth}
+\begin{minipage}[t]{0.38\textwidth}
 \procedure[mode=text]{AddLandmark$_\node$()}{
 Upon invocation by $\env$\\
 \quad Store \textit{$l_\textit{flag}$}$ := \top$\\
@@ -193,6 +192,40 @@ Upon invocation by $\env$:\\
 $\send(\computecoord, (\nodelandmark_1, \ldots, \nodelandmark_k))$ to $\node_r$\\
 $\receive(\computecoord, (\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}))$ from $\node_r$\\
 $\send((\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}))$ to $\env$
+}
+\procedure[mode=text]{InitRoute$_{\node_r}$($\nodelandmark_1, \ldots, \nodelandmark_k$)}{
+Upon invocation by $\node$:\\
+\quad Compute $(\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}) \gets \randcordfun((\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k}))$\\
+\quad $\send(\computecoord, (\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}))$ to $\node$
+}
+\procedure[mode=text]{NextHop$_\node$($m := (\nodeidrand{\node_r}{\nodelandmark_1}, \nodelandmark_1), \ldots, (\nodeidrand{\node_r}{\nodelandmark_k}, \nodelandmark_k)$)}{
+Upon invocation by $\env$:\\
+\quad Set $\textit{next-hops} := ()$\\
+\quad For each $(\nodeidrand{\node_r}{\nodelandmark_i}, \nodelandmark_i)$ in $m$ do: \\
+\quad \quad Compute $\node'$ s.t. $\node' \in \textit{ngb}(\node))$ and $\textit{min}(\distfun(\nodeid{\node'}{\nodelandmark_i}, \nodeidrand{\node_r}{\nodelandmark_i}))$\\
+\quad \quad Add $\node'$ to \textit{next-hops}\\
+\quad $\send(\donenexthopIF, \textit{next-hops})$ to $\node$
+}
+\end{minipage}
+\begin{minipage}[t]{0.3\textwidth}
+\procedure[mode=text]{$\randcordfun(\nodeid{\node_r}{\nodelandmark_1}, \ldots, \nodeid{\node_r}{\nodelandmark_k})$}{
+For $i = 1 \ldots k$ do:\\
+\quad Parse $\nodeid{\node_r}{\nodelandmark_1}$ as $(c_1, \ldots, c_m)$\\
+\quad Compute $\randkey \gets \set{0,1}^\lambda$\\
+\quad Set $c^*_1 := \hashfun(c_1 \xor \randkey)$\\
+\quad For $j = 2 \ldots k$ do:\\
+\quad \quad Set $c^*_j := \hashfun(c^*_{j-1} \xor \randkey)$\\
+\quad Set $\nodeidrand{\node_r}{\nodelandmark_i} := ((c^*_1, \ldots, c^*_k), \randkey)$\\
+Return $((\nodeidrand{\node_r}{\nodelandmark_1}, \ldots, \nodeidrand{\node_r}{\nodelandmark_k}), \randkey)$
+}
+\procedure[mode=text]{$\distfun(\nodeid{\node_1}{\nodelandmark_i}, \nodeidrand{\node_2}{\nodelandmark_j})$}{
+Parse $\nodeidrand{\node_2}{\nodelandmark_j}$ as $(c^*_1, \ldots, c^*_m, \randkey)$\\
+Parse $\nodeid{\node_1}{\nodelandmark_i}$ as $(d_1, \ldots, d_n)$\\
+\quad Set $d^*_1 := \hashfun(d_1 \xor \randkey)$\\
+\quad For $j = 2 \ldots k$ do:\\
+\quad \quad Set $d^*_j := \hashfun(d^*_{j-1} \xor \randkey)$\\
+Set $\alpha := \cpl((c^*_1, \ldots, c^*_m), (d^*_1, \ldots, d^*_n))$\\
+Return $m + n - 2\alpha$
 }
 \end{minipage}
 }
